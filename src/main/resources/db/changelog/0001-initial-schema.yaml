@@ -1,0 +1,736 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0001-accounts
+      author: assistant
+      changes:
+        - createTable:
+            tableName: accounts
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(180)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timezone
+                  type: VARCHAR(100)
+              - column:
+                  name: metadata
+                  type: JSONB
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+
+  - changeSet:
+      id: 0002-users
+      author: assistant
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: account_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(180)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password_hash
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_name
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_login_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: preferences
+                  type: JSONB
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: users
+            baseColumnNames: account_id
+            referencedTableName: accounts
+            referencedColumnNames: id
+            constraintName: fk_users_account
+
+  - changeSet:
+      id: 0003-api-credentials
+      author: assistant
+      changes:
+        - createTable:
+            tableName: api_credentials
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: account_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: public_key
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: secret_key
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_used_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: api_credentials
+            baseColumnNames: account_id
+            referencedTableName: accounts
+            referencedColumnNames: id
+            constraintName: fk_api_credentials_account
+
+  - changeSet:
+      id: 0004-stores
+      author: assistant
+      changes:
+        - createTable:
+            tableName: stores
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: account_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(180)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: code
+                  type: VARCHAR(60)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: manager_id
+                  type: UUID
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timezone
+                  type: VARCHAR(100)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: stores
+            baseColumnNames: account_id
+            referencedTableName: accounts
+            referencedColumnNames: id
+            constraintName: fk_stores_account
+        - addForeignKeyConstraint:
+            baseTableName: stores
+            baseColumnNames: manager_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_stores_manager
+
+  - changeSet:
+      id: 0005-store-settings
+      author: assistant
+      changes:
+        - createTable:
+            tableName: store_settings
+            columns:
+              - column:
+                  name: store_id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: currency
+                  type: VARCHAR(8)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: locale
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: auto_assign_external_support
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: webhook_endpoint
+                  type: VARCHAR(255)
+              - column:
+                  name: notification_emails
+                  type: TEXT
+              - column:
+                  name: preferences
+                  type: JSONB
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: store_settings
+            baseColumnNames: store_id
+            referencedTableName: stores
+            referencedColumnNames: id
+            constraintName: fk_store_settings_store
+
+  - changeSet:
+      id: 0006-store-team-members
+      author: assistant
+      changes:
+        - createTable:
+            tableName: store_team_members
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: store_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: UUID
+              - column:
+                  name: external_member_email
+                  type: VARCHAR(180)
+              - column:
+                  name: role
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: invitation_status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: added_by
+                  type: UUID
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: store_team_members
+            baseColumnNames: store_id
+            referencedTableName: stores
+            referencedColumnNames: id
+            constraintName: fk_store_team_store
+        - addForeignKeyConstraint:
+            baseTableName: store_team_members
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_store_team_user
+
+  - changeSet:
+      id: 0007-stored-files
+      author: assistant
+      changes:
+        - createTable:
+            tableName: stored_files
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: account_id
+                  type: UUID
+              - column:
+                  name: store_id
+                  type: UUID
+              - column:
+                  name: original_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: storage_path
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: mime_type
+                  type: VARCHAR(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: size_bytes
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: checksum
+                  type: VARCHAR(128)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 0008-order-import-batches
+      author: assistant
+      changes:
+        - createTable:
+            tableName: order_import_batches
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: store_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: uploader_id
+                  type: UUID
+              - column:
+                  name: file_id
+                  type: UUID
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_path
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: started_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: completed_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: summary
+                  type: JSONB
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: order_import_batches
+            baseColumnNames: store_id
+            referencedTableName: stores
+            referencedColumnNames: id
+            constraintName: fk_import_batches_store
+        - addForeignKeyConstraint:
+            baseTableName: order_import_batches
+            baseColumnNames: uploader_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_import_batches_uploader
+        - addForeignKeyConstraint:
+            baseTableName: order_import_batches
+            baseColumnNames: file_id
+            referencedTableName: stored_files
+            referencedColumnNames: id
+            constraintName: fk_import_batches_file
+
+  - changeSet:
+      id: 0009-orders
+      author: assistant
+      changes:
+        - createTable:
+            tableName: orders
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: store_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: external_order_id
+                  type: VARCHAR(120)
+              - column:
+                  name: customer_name
+                  type: VARCHAR(180)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: customer_phone
+                  type: VARCHAR(60)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: destination_address
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_amount
+                  type: NUMERIC(12,2)
+              - column:
+                  name: currency
+                  type: VARCHAR(8)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: metadata
+                  type: JSONB
+              - column:
+                  name: import_batch_id
+                  type: UUID
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: orders
+            baseColumnNames: store_id
+            referencedTableName: stores
+            referencedColumnNames: id
+            constraintName: fk_orders_store
+        - addForeignKeyConstraint:
+            baseTableName: orders
+            baseColumnNames: import_batch_id
+            referencedTableName: order_import_batches
+            referencedColumnNames: id
+            constraintName: fk_orders_import_batch
+
+  - changeSet:
+      id: 0010-order-status-history
+      author: assistant
+      changes:
+        - createTable:
+            tableName: order_status_history
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: order_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: note
+                  type: TEXT
+              - column:
+                  name: changed_by
+                  type: UUID
+              - column:
+                  name: changed_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: order_status_history
+            baseColumnNames: order_id
+            referencedTableName: orders
+            referencedColumnNames: id
+            constraintName: fk_status_history_order
+        - addForeignKeyConstraint:
+            baseTableName: order_status_history
+            baseColumnNames: changed_by
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_status_history_user
+
+  - changeSet:
+      id: 0011-order-import-rows
+      author: assistant
+      changes:
+        - createTable:
+            tableName: order_import_rows
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: batch_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: row_number
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: raw_payload
+                  type: JSONB
+                  constraints:
+                    nullable: false
+              - column:
+                  name: order_id
+                  type: UUID
+              - column:
+                  name: status
+                  type: VARCHAR(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: error_message
+                  type: TEXT
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: order_import_rows
+            baseColumnNames: batch_id
+            referencedTableName: order_import_batches
+            referencedColumnNames: id
+            constraintName: fk_import_rows_batch
+        - addForeignKeyConstraint:
+            baseTableName: order_import_rows
+            baseColumnNames: order_id
+            referencedTableName: orders
+            referencedColumnNames: id
+            constraintName: fk_import_rows_order
+
+  - changeSet:
+      id: 0012-webhook-subscriptions
+      author: assistant
+      changes:
+        - createTable:
+            tableName: webhook_subscriptions
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: store_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target_url
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: secret_token
+                  type: VARCHAR(128)
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: webhook_subscriptions
+            baseColumnNames: store_id
+            referencedTableName: stores
+            referencedColumnNames: id
+            constraintName: fk_webhook_subscriptions_store
+
+  - changeSet:
+      id: 0013-webhook-subscription-events
+      author: assistant
+      changes:
+        - createTable:
+            tableName: webhook_subscription_events
+            columns:
+              - column:
+                  name: subscription_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_type
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: webhook_subscription_events
+            columnNames: subscription_id, event_type
+            constraintName: pk_webhook_subscription_events
+        - addForeignKeyConstraint:
+            baseTableName: webhook_subscription_events
+            baseColumnNames: subscription_id
+            referencedTableName: webhook_subscriptions
+            referencedColumnNames: id
+            constraintName: fk_subscription_events_subscription
+
