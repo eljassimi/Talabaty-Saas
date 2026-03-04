@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/0001-initial-schema.yaml
+  - include:
+      file: db/changelog/0002-shipping-providers.yaml
+  - include:
+      file: db/changelog/0004-add-store-to-shipping-providers.yaml
+  - include:
+      file: db/changelog/0002-add-excel-sync-fields.yaml
+  - include:
+      file: db/changelog/0005-add-password-change-and-store-selection.yaml
+  - include:
+      file: db/changelog/0006-add-store-logo-and-color.yaml
+  - include:
+      file: db/changelog/0007-modify-store-logo-url-to-text.yaml
+  - include:
+      file: db/changelog/0008-add-order-assigned-to.yaml
+  - include:
+      file: db/changelog/0009-add-product-fields-to-orders.yaml
+  - include:
+      file: db/changelog/0010-add-excel-sync-config.yaml
+  - include:
+      file: db/changelog/0011-migrate-excel-sync-to-google-sheets.yaml
+  - include:
+      file: db/changelog/0012-add-youcan-integration.yaml
+  - include:
+      file: db/changelog/0013-increase-token-column-sizes.yaml
+  - include:
+      file: db/changelog/0014-add-phone-number-to-users.yaml
+  - include:
+      file: db/changelog/0015-add-city-to-orders.yaml
+
