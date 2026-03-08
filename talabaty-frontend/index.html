@@ -6,8 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200..700&family=Sora:wght@100..800&display=swap" rel="stylesheet">
     <title>Talabaty - Order Management System</title>
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('talabaty-theme');
+          if (t === 'dark' || t === 'light') document.documentElement.classList.add(t);
+          else document.documentElement.classList.add('light');
+        } catch (e) { document.documentElement.classList.add('light'); }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

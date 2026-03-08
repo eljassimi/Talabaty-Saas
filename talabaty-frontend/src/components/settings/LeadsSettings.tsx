@@ -1,19 +1,23 @@
 import { useState, useEffect } from 'react'
-import { Check } from 'lucide-react'
+import { Check, Unplug } from 'lucide-react'
 import { useStoreColor } from '../../hooks/useStoreColor'
 import { useAuth } from '../../contexts/AuthContext'
 import YouCanIntegration from '../YouCanIntegration'
-import { youcanService } from '../../services/youcanService'
+import { youcanService, YouCanStore } from '../../services/youcanService'
 import { googleSheetsSyncService, GoogleSheetsSyncConfig } from '../../services/googleSheetsSyncService'
 import GoogleSheetsSyncModal from '../GoogleSheetsSyncModal'
+import youcanLogo from '../../images/youcan-logo.png'
 
 export default function LeadsSettings() {
   const { storeColor } = useStoreColor()
   const { user } = useAuth()
   const [youcanConnected, setYoucanConnected] = useState(false)
+  const [connectedYouCanStore, setConnectedYouCanStore] = useState<YouCanStore | null>(null)
+  const [disconnectingYouCan, setDisconnectingYouCan] = useState(false)
   const [googleSheetsConnected, setGoogleSheetsConnected] = useState(false)
   const [googleSheetsConfig, setGoogleSheetsConfig] = useState<GoogleSheetsSyncConfig | null>(null)
   const [showGoogleSheetsModal, setShowGoogleSheetsModal] = useState(false)
+  const [disconnectingSheets, setDisconnectingSheets] = useState(false)
 
   useEffect(() => {
     if (user?.selectedStoreId) {
@@ -37,10 +41,43 @@ export default function LeadsSettings() {
     if (!user?.selectedStoreId) return
     try {
       const stores = await youcanService.getConnectedStores()
-      const connected = stores.some(s => s.storeId === user.selectedStoreId)
-      setYoucanConnected(connected)
+      const forStore = stores.find(s => s.storeId === user.selectedStoreId)
+      setYoucanConnected(!!forStore)
+      setConnectedYouCanStore(forStore ?? null)
     } catch (error) {
       console.error('Error checking YouCan connection:', error)
+      setYoucanConnected(false)
+      setConnectedYouCanStore(null)
+    }
+  }
+
+  const handleDisconnectYouCan = async () => {
+    if (!connectedYouCanStore || disconnectingYouCan) return
+    if (!confirm('Disconnect YouCan from this store? You can reconnect anytime.')) return
+    setDisconnectingYouCan(true)
+    try {
+      await youcanService.disconnectStore(connectedYouCanStore.id)
+      await checkYouCanConnection()
+    } catch (error) {
+      console.error('Error disconnecting YouCan:', error)
+      alert('Failed to disconnect. Please try again.')
+    } finally {
+      setDisconnectingYouCan(false)
+    }
+  }
+
+  const handleDisconnectGoogleSheets = async () => {
+    if (!googleSheetsConfig || disconnectingSheets) return
+    if (!confirm('Remove Google Sheets sync for this store? You can set it up again anytime.')) return
+    setDisconnectingSheets(true)
+    try {
+      await googleSheetsSyncService.deleteConfig(googleSheetsConfig.id)
+      await checkGoogleSheetsConnection()
+    } catch (error) {
+      console.error('Error disconnecting Google Sheets:', error)
+      alert('Failed to disconnect. Please try again.')
+    } finally {
+      setDisconnectingSheets(false)
     }
   }
 
@@ -70,7 +107,7 @@ export default function LeadsSettings() {
       description: 'E-commerce platform',
       icon: 'y',
       iconBg: '#ec4899', // Pink background
-      logoUrl: 'https://developer.youcan.shop/logo-with-shadow.webp',
+      logoUrl: youcanLogo,
       connected: youcanConnected,
       component: 'youcan',
     },
@@ -303,7 +340,7 @@ export default function LeadsSettings() {
           <div className="space-y-3">
             {youcanConnected && (
               <div 
-                className="flex items-center justify-between p-4 border rounded-xl transition-all duration-300 hover:shadow-md"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-xl transition-all duration-300 hover:shadow-md"
                 style={{ 
                   borderColor: storeColor + '30',
                   backgroundColor: storeColor + '08'
@@ -311,15 +348,14 @@ export default function LeadsSettings() {
               >
                 <div className="flex items-center space-x-3">
                   <div 
-                    className="h-12 w-12 rounded-xl flex items-center justify-center bg-white border-2 overflow-hidden p-1.5 shadow-sm"
+                    className="h-12 w-12 rounded-xl flex items-center justify-center bg-white border-2 overflow-hidden p-1.5 shadow-sm shrink-0"
                     style={{ borderColor: storeColor + '30' }}
                   >
                     <img 
-                      src="https://developer.youcan.shop/logo-with-shadow.webp" 
+                      src={youcanLogo} 
                       alt="YouCan" 
                       className="h-full w-full object-contain"
                       onError={(e) => {
-                        // Fallback if image fails to load
                         const target = e.target as HTMLImageElement
                         target.style.display = 'none'
                         const parent = target.parentElement
@@ -339,32 +375,45 @@ export default function LeadsSettings() {
                     <p className="text-xs text-gray-500">E-commerce platform</p>
                   </div>
                 </div>
-                <div 
-                  className="flex items-center"
-                  style={{ color: storeColor }}
-                >
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 border-t border-gray-200 pt-3 sm:pt-0 sm:border-t-0">
                   <div 
-                    className="rounded-full p-1 mr-2"
-                    style={{ backgroundColor: storeColor + '20' }}
+                    className="flex items-center"
+                    style={{ color: storeColor }}
                   >
-                    <Check className="h-4 w-4" style={{ color: storeColor }} />
+                    <div 
+                      className="rounded-full p-1 mr-2"
+                      style={{ backgroundColor: storeColor + '20' }}
+                    >
+                      <Check className="h-4 w-4" style={{ color: storeColor }} />
+                    </div>
+                    <span className="text-sm font-medium">Connected</span>
                   </div>
-                  <span className="text-sm font-medium">Connected</span>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleDisconnectYouCan() }}
+                    disabled={disconnectingYouCan}
+                    className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    <Unplug className="h-4 w-4" />
+                    {disconnectingYouCan ? 'Disconnecting…' : 'Disconnect'}
+                  </button>
                 </div>
               </div>
             )}
             {googleSheetsConnected && (
               <div 
-                className="flex items-center justify-between p-4 border rounded-xl transition-all duration-300 hover:shadow-md cursor-pointer"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-xl transition-all duration-300 hover:shadow-md"
                 style={{ 
                   borderColor: storeColor + '30',
                   backgroundColor: storeColor + '08'
                 }}
-                onClick={() => setShowGoogleSheetsModal(true)}
               >
-                <div className="flex items-center space-x-3">
+                <div 
+                  className="flex items-center space-x-3 flex-1 cursor-pointer"
+                  onClick={() => setShowGoogleSheetsModal(true)}
+                >
                   <div 
-                    className="h-12 w-12 rounded-xl flex items-center justify-center bg-white border-2 overflow-hidden p-1.5 shadow-sm"
+                    className="h-12 w-12 rounded-xl flex items-center justify-center bg-white border-2 overflow-hidden p-1.5 shadow-sm shrink-0"
                     style={{ borderColor: storeColor + '30' }}
                   >
                     <img 
@@ -372,7 +421,6 @@ export default function LeadsSettings() {
                       alt="Google Sheets" 
                       className="h-full w-full object-contain"
                       onError={(e) => {
-                        // Fallback if image fails to load
                         const target = e.target as HTMLImageElement
                         target.style.display = 'none'
                         const parent = target.parentElement
@@ -392,17 +440,28 @@ export default function LeadsSettings() {
                     <p className="text-xs text-gray-500">Sync orders from Google Sheets</p>
                   </div>
                 </div>
-                <div 
-                  className="flex items-center"
-                  style={{ color: storeColor }}
-                >
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 border-t border-gray-200 pt-3 sm:pt-0 sm:border-t-0">
                   <div 
-                    className="rounded-full p-1 mr-2"
-                    style={{ backgroundColor: storeColor + '20' }}
+                    className="flex items-center"
+                    style={{ color: storeColor }}
                   >
-                    <Check className="h-4 w-4" style={{ color: storeColor }} />
+                    <div 
+                      className="rounded-full p-1 mr-2"
+                      style={{ backgroundColor: storeColor + '20' }}
+                    >
+                      <Check className="h-4 w-4" style={{ color: storeColor }} />
+                    </div>
+                    <span className="text-sm font-medium">Connected</span>
                   </div>
-                  <span className="text-sm font-medium">Connected</span>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleDisconnectGoogleSheets() }}
+                    disabled={disconnectingSheets}
+                    className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    <Unplug className="h-4 w-4" />
+                    {disconnectingSheets ? 'Disconnecting…' : 'Disconnect'}
+                  </button>
                 </div>
               </div>
             )}

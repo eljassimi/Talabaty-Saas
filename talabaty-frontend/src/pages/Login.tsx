@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { authService } from '../services/authService'
 import { BRAND_COLORS } from '../constants/brand'
 import TalabatyLogoSvg from '../images/talabaty-logo.svg'
 import GridDistortion from '../components/GridDistortion'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Sun, Moon } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -14,6 +15,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,7 +91,15 @@ export default function Login() {
       </div>
 
       {/* Right Side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-gray-50">
+      <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-[#222328] relative">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="absolute top-6 right-6 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#2A2D35] transition-colors"
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </button>
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-8">
@@ -103,8 +113,8 @@ export default function Login() {
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign in to your account</h1>
-          <p className="text-gray-600 mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Sign in to your account</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
             Access your tasks, notes, and projects anytime, anywhere - and keep everything flowing in one place.
           </p>
 
@@ -123,7 +133,7 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Your email
               </label>
               <input
@@ -134,7 +144,7 @@ export default function Login() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#2A2D35] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                 style={{
                   '--tw-ring-color': BRAND_COLORS.primary,
                 } as React.CSSProperties & { '--tw-ring-color': string }}
@@ -152,7 +162,7 @@ export default function Login() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -164,7 +174,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#2A2D35] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                   style={{
                     '--tw-ring-color': BRAND_COLORS.primary,
                   } as React.CSSProperties & { '--tw-ring-color': string }}
@@ -218,7 +228,7 @@ export default function Login() {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">or continue with</span>
+              <span className="px-2 bg-white dark:bg-[#222328] text-gray-500 dark:text-gray-400">or continue with</span>
             </div>
           </div>
 
@@ -227,7 +237,7 @@ export default function Login() {
             <button
               type="button"
               onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors font-medium text-gray-700"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#2A2D35] hover:bg-gray-50 dark:hover:bg-[#3d4048] transition-colors font-medium text-gray-700 dark:text-gray-200"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -241,7 +251,7 @@ export default function Login() {
 
           {/* Sign Up Link */}
           <div className="text-center text-sm">
-            <span className="text-gray-600">Don't have an account? </span>
+            <span className="text-gray-600 dark:text-gray-400">Don't have an account? </span>
             <Link 
               to="/signup" 
               className="font-semibold transition-colors"

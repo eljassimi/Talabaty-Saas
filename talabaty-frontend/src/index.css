@@ -3,15 +3,16 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  --brand-color: #123133;
+  --font-sans: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-cairo: 'Cairo', 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light;
-  color: #1f2937;
-  background-color: #f9fafb;
+  color: #111827;
+  background-color: #FFFFFF;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -19,15 +20,190 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Small / secondary text: Cairo for a modern dashboard look */
+.text-xs,
+.text-sm,
+[class*='text-secondary'],
+.font-cairo {
+  font-family: var(--font-cairo);
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #FFFFFF;
+  color: #111827;
+}
+
+/* Light mode: force white background when html has no .dark class */
+html:not(.dark) body,
+html.light body {
+  background-color: #FFFFFF !important;
+  color: #111827;
+}
+
+html.dark body {
+  background-color: #222328;
+  color: #f9fafb;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
+  background-color: #FFFFFF;
+}
+
+html:not(.dark) #root,
+html.light #root {
+  background-color: #FFFFFF !important;
+}
+
+html.dark #root {
+  background-color: #222328;
+}
+
+/* Light mode: force layout and main content to white (no gray) */
+html:not(.dark) [data-layout="saas-dashboard"],
+html.light [data-layout="saas-dashboard"] {
+  background-color: #FFFFFF !important;
+}
+
+html:not(.dark) [data-layout="saas-dashboard"] main,
+html.light [data-layout="saas-dashboard"] main {
+  background-color: #FFFFFF !important;
+}
+
+/* Light mode: layout wrapper and main are white */
+html:not(.dark) main,
+html.light main {
+  background-color: #FFFFFF !important;
+}
+
+/* Dark mode: form controls (inputs, selects, textareas) */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark select,
+html.dark textarea {
+  background-color: #2A2D35;
+  border-color: #3d4048;
+  color: #f9fafb;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Header search input placeholder by theme (theme-driven, not html.dark) */
+.header-theme-light input::placeholder {
+  color: #6B7280;
+}
+.header-theme-dark input::placeholder {
+  color: #9ca3af;
+}
+
+/* Header icon buttons hover (theme-driven) */
+.header-theme-light .header-icon-btn:hover {
+  background-color: #F6F8FB;
+  color: #111827;
+}
+.header-theme-dark .header-icon-btn:hover {
+  background-color: #3d4048;
+  color: #f3f4f6;
+}
+
+/* Header dropdown items hover (theme-driven) */
+.header-theme-light .header-dropdown-item:hover {
+  background-color: #F6F8FB;
+  color: #111827;
+}
+.header-theme-dark .header-dropdown-item:hover {
+  background-color: #3d4048;
+  color: #f3f4f6;
+}
+
+/* Header store selector button hover */
+.header-theme-light .header-store-trigger:hover {
+  background-color: #F6F8FB !important;
+}
+.header-theme-dark .header-store-trigger:hover {
+  background-color: #3d4048 !important;
+}
+
+/* Dark mode: cards and panels using bg-white */
+html.dark .bg-white {
+  background-color: #2A2D35;
+  border-color: #3d4048;
+}
+
+/* Dark mode: common text colors */
+html.dark .text-\[#111827\] {
+  color: #f9fafb;
+}
+
+html.dark .text-\[#6B7280\] {
+  color: #d1d5db;
+}
+
+html.dark .text-gray-900 {
+  color: #f9fafb;
+}
+
+html.dark .text-gray-600,
+html.dark .text-gray-700 {
+  color: #d1d5db;
+}
+
+html.dark .text-gray-500 {
+  color: #d1d5db;
+}
+
+/* Dark mode: ensure all text is visible (white/light) */
+html.dark,
+html.dark body {
+  color: #f9fafb;
+}
+
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark p,
+html.dark span,
+html.dark label,
+html.dark td,
+html.dark th,
+html.dark li,
+html.dark a {
+  color: inherit;
+}
+
+html.dark .text-gray-400 {
+  color: #d1d5db;
+}
+
+html.dark .text-gray-300 {
+  color: #e5e7eb;
+}
+
+/* Dark mode: borders */
+html.dark .border-\[\#E6E8EC\],
+html.dark .border-gray-200 {
+  border-color: #3d4048;
+}
+
+/* Dark mode: hover backgrounds */
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-\[\#F6F8FB\]:hover {
+  background-color: #2A2D35;
+}
+
+html.dark .bg-gray-50 {
+  background-color: #2A2D35;
+}
+
+html.dark .bg-\[\#F6F8FB\] {
+  background-color: #222328;
 }
 
 /* Custom scrollbar */
@@ -80,4 +256,32 @@ body {
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Talabaty logo: continuous spin (loader) */
+.talabaty-logo-spin {
+  animation: talabaty-spin 0.5s linear infinite;
+}
+
+/* Talabaty logo: one rotation on page change */
+.talabaty-logo-rotate-once {
+  animation: talabaty-rotate-once 0.5s ease-in-out 1;
+}
+
+@keyframes talabaty-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes talabaty-rotate-once {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

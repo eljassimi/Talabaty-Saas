@@ -1,0 +1,72 @@
+# Migration: align database schema with JPA entities (stores, orders, shipping_providers, youcan_stores, excel_sync_configs)
+databaseChangeLog:
+  - changeSet:
+      id: 0017-schema-sync-with-entities
+      author: assistant
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              -- stores: logo and color (for UI)
+              ALTER TABLE stores ADD COLUMN IF NOT EXISTS logo_url TEXT;
+              ALTER TABLE stores ADD COLUMN IF NOT EXISTS color VARCHAR(7) DEFAULT '#0284c7';
+
+              -- orders: product/city/assigned_to
+              ALTER TABLE orders ADD COLUMN IF NOT EXISTS ozon_tracking_number VARCHAR(120);
+              ALTER TABLE orders ADD COLUMN IF NOT EXISTS city VARCHAR(120);
+              ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_name VARCHAR(255);
+              ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_id VARCHAR(255);
+              ALTER TABLE orders ADD COLUMN IF NOT EXISTS assigned_to UUID REFERENCES users(id);
+
+              -- shipping_providers table (if missing)
+              CREATE TABLE IF NOT EXISTS shipping_providers (
+                id UUID PRIMARY KEY,
+                account_id UUID NOT NULL REFERENCES accounts(id),
+                store_id UUID REFERENCES stores(id),
+                provider_type VARCHAR(32) NOT NULL,
+                customer_id VARCHAR(100) NOT NULL,
+                api_key VARCHAR(255) NOT NULL,
+                is_active BOOLEAN NOT NULL DEFAULT true,
+                display_name VARCHAR(180),
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+              );
+
+              -- youcan_stores table (if missing)
+              CREATE TABLE IF NOT EXISTS youcan_stores (
+                id UUID PRIMARY KEY,
+                account_id UUID NOT NULL REFERENCES accounts(id),
+                store_id UUID NOT NULL REFERENCES stores(id),
+                youcan_store_id VARCHAR(100) NOT NULL,
+                youcan_store_domain VARCHAR(255),
+                youcan_store_name VARCHAR(255),
+                access_token VARCHAR(2000) NOT NULL,
+                refresh_token VARCHAR(2000),
+                token_expires_at TIMESTAMP WITH TIME ZONE,
+                scopes VARCHAR(500),
+                is_active BOOLEAN NOT NULL DEFAULT true,
+                last_sync_at TIMESTAMP WITH TIME ZONE,
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+              );
+
+              -- excel_sync_configs table (if missing)
+              CREATE TABLE IF NOT EXISTS excel_sync_configs (
+                id UUID PRIMARY KEY,
+                store_id UUID NOT NULL REFERENCES stores(id),
+                spreadsheet_id VARCHAR(200) NOT NULL,
+                sheet_name VARCHAR(200) NOT NULL DEFAULT 'Sheet1',
+                credentials_json TEXT,
+                access_token TEXT,
+                refresh_token TEXT,
+                token_expires_at TIMESTAMP WITH TIME ZONE,
+                last_synced_row_count INT,
+                sync_enabled BOOLEAN NOT NULL DEFAULT true,
+                sync_interval_seconds INT NOT NULL DEFAULT 30,
+                column_mapping JSONB,
+                last_sync_at TIMESTAMP WITH TIME ZONE,
+                last_sync_status VARCHAR(50),
+                last_sync_error TEXT,
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+              );

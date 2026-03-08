@@ -9,6 +9,7 @@ import CreateOrderModal from '../components/CreateOrderModal'
 import UpdateOrderStatusModal from '../components/UpdateOrderStatusModal'
 import { useStoreColor } from '../hooks/useStoreColor'
 import { cityExistsInDeliveryPlatform } from '../utils/deliveryCities'
+import TalabatyLogoSpinner from '../components/TalabatyLogoSpinner'
 
 // Helper to convert hex to RGB
 function hexToRgb(hex: string) {
@@ -482,9 +483,9 @@ export default function Orders() {
 
   if (loading && orders.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <p className="ml-4 text-gray-600">Loading orders...</p>
+      <div className="flex flex-col items-center justify-center min-h-[320px] gap-4">
+        <TalabatyLogoSpinner spinning size={88} />
+        <p className="text-sm text-[#6B7280]">Loading orders...</p>
       </div>
     )
   }

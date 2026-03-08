@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
@@ -8,25 +9,22 @@ import StoreDetail from './pages/StoreDetail'
 import Orders from './pages/Orders'
 import OrderDetail from './pages/OrderDetail'
 import ShippingProviders from './pages/ShippingProviders'
+import Integrations from './pages/Integrations'
 import Users from './pages/Users'
 import ChangePassword from './pages/ChangePassword'
 import SelectStore from './pages/SelectStore'
 import Settings from './pages/Settings'
+import Help from './pages/Help'
 import Layout from './components/Layout'
+import TalabatyLogoSpinner from './components/TalabatyLogoSpinner'
 
 function ProtectedRoute({ children, requireStore = true }: { children: React.ReactNode; requireStore?: boolean }) {
   const { user, loading } = useAuth()
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div 
-          className="animate-spin rounded-full h-12 w-12 border-2 border-transparent"
-          style={{
-            borderTopColor: '#123133',
-            borderRightColor: '#FF6E00',
-          }}
-        ></div>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#222328]">
+        <TalabatyLogoSpinner spinning size={88} />
       </div>
     )
   }
@@ -97,7 +95,9 @@ function AppRoutes() {
         <Route path="orders" element={<Orders />} />
         <Route path="orders/:id" element={<OrderDetail />} />
         <Route path="shipping" element={<ShippingProviders />} />
+        <Route path="integrations" element={<Integrations />} />
         <Route path="users" element={<Users />} />
+        <Route path="help" element={<Help />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>
@@ -107,9 +107,11 @@ function AppRoutes() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   )
 }

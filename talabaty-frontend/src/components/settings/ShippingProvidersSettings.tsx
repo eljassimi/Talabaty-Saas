@@ -5,7 +5,12 @@ import { Truck, Plus, Settings } from 'lucide-react'
 import ShippingProviderForm from '../ShippingProviderForm'
 import { DELIVERY_PROVIDERS, getProviderLogo } from '../../utils/deliveryProviders'
 
-export default function ShippingProvidersSettings() {
+interface ShippingProvidersSettingsProps {
+  /** When true, hide the section title (e.g. when embedded in Integrations page) */
+  hideTitle?: boolean
+}
+
+export default function ShippingProvidersSettings({ hideTitle }: ShippingProvidersSettingsProps) {
   const { storeColor } = useStoreColor()
   const [stores, setStores] = useState<Store[]>([])
   const [storeProviders, setStoreProviders] = useState<Record<string, ShippingProvider[]>>({})
@@ -57,11 +62,13 @@ export default function ShippingProvidersSettings() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Connect your Delivery companies</h2>
-          <p className="text-sm text-gray-600">Choose your delivery company to link it.</p>
-        </div>
+      <div className={hideTitle ? 'p-6' : 'bg-white rounded-lg shadow-sm border border-gray-200 p-6'}>
+        {!hideTitle && (
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Connect your Delivery companies</h2>
+            <p className="text-sm text-gray-600">Choose your delivery company to link it.</p>
+          </div>
+        )}
 
         {/* Delivery Companies Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

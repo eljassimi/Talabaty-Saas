@@ -5,6 +5,7 @@ import ma.talabaty.talabaty.domain.youcan.model.YouCanStore;
 import ma.talabaty.talabaty.domain.youcan.service.YouCanOAuthService;
 import ma.talabaty.talabaty.domain.youcan.service.YouCanOrderSyncService;
 import ma.talabaty.talabaty.domain.youcan.repository.YouCanStoreRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -23,6 +24,9 @@ public class YouCanController {
     private final YouCanOAuthService youCanOAuthService;
     private final YouCanOrderSyncService youCanOrderSyncService;
     private final YouCanStoreRepository youCanStoreRepository;
+
+    @Value("${app.frontend.url:http://localhost:8080}")
+    private String frontendBaseUrl;
 
     public YouCanController(
             YouCanOAuthService youCanOAuthService,
@@ -79,7 +83,7 @@ public class YouCanController {
             if (storeId != null) {
                 try {
                     return ResponseEntity.status(HttpStatus.FOUND)
-                            .header("Location", "http://localhost:3000/stores/" + storeId + "?youcan=error&message=" + 
+                            .header("Location", frontendBaseUrl + "/stores/" + storeId + "?youcan=error&message=" + 
                                     java.net.URLEncoder.encode(errorMessage, java.nio.charset.StandardCharsets.UTF_8))
                             .build();
                 } catch (Exception e) {
@@ -112,7 +116,7 @@ public class YouCanController {
             // Redirect to frontend store detail page with success message
             if (storeId != null) {
                 return ResponseEntity.status(HttpStatus.FOUND)
-                        .header("Location", "http://localhost:3000/stores/" + storeId + "?youcan=connected")
+                        .header("Location", frontendBaseUrl + "/stores/" + storeId + "?youcan=connected")
                         .build();
             }
             
@@ -149,7 +153,7 @@ public class YouCanController {
             
             if (storeId != null) {
                 return ResponseEntity.status(HttpStatus.FOUND)
-                        .header("Location", "http://localhost:3000/stores/" + storeId + "?youcan=error&message=" + 
+                        .header("Location", frontendBaseUrl + "/stores/" + storeId + "?youcan=error&message=" + 
                                 java.net.URLEncoder.encode(errorMessage, java.nio.charset.StandardCharsets.UTF_8))
                         .build();
             }

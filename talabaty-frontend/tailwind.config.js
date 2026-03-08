@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,7 +8,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Poppins', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'sans-serif'],
+        sans: ['Sora', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        cairo: ['Cairo', 'Sora', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
       },
       colors: {
         primary: {
@@ -21,6 +23,13 @@ export default {
           700: '#0369a1',
           800: '#075985',
           900: '#0c4a6e',
+        },
+        saas: {
+          bg: '#F6F8FB',
+          card: '#FFFFFF',
+          border: '#E6E8EC',
+          'text-primary': '#111827',
+          'text-secondary': '#6B7280',
         },
       },
     },

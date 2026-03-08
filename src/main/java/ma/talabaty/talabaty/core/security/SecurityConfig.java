@@ -44,6 +44,8 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(
             "http://localhost:3000",
             "http://127.0.0.1:3000",
+            "http://localhost:3030",
+            "http://127.0.0.1:3030",
             "http://localhost:3001",
             "http://127.0.0.1:3001",
             "http://localhost:3002",
@@ -66,11 +68,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow all OPTIONS requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/", "/api/health").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/youcan/oauth/callback").permitAll() // OAuth callback must be public
-                        .requestMatchers("/api/test/**").authenticated() // For testing authentication
-                        .requestMatchers("/api/public/**").authenticated() // Requires API key or JWT
+                        .requestMatchers("/api/youcan/oauth/callback").permitAll()
+                        .requestMatchers("/api/test/**").authenticated()
+                        .requestMatchers("/api/public/**").authenticated()
+                        // SPA and static assets: permit GET to non-API paths (/, /login, /assets/*, etc.)
+                        .requestMatchers(request -> request.getRequestURI() != null && !request.getRequestURI().startsWith("/api")).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

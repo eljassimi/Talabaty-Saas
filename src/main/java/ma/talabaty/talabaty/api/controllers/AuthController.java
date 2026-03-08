@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = {
@@ -32,12 +34,28 @@ public class AuthController {
     private final JwtTokenProvider tokenProvider;
     private final UserMapper userMapper;
 
-    public AuthController(UserService userService, AccountService accountService, 
+    public AuthController(UserService userService, AccountService accountService,
                          JwtTokenProvider tokenProvider, UserMapper userMapper) {
         this.userService = userService;
         this.accountService = accountService;
         this.tokenProvider = tokenProvider;
         this.userMapper = userMapper;
+    }
+
+    /**
+     * GET /api/auth - Info for browser or API explorers (actual auth uses POST).
+     */
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> authInfo() {
+        return ResponseEntity.ok(Map.of(
+                "message", "Talabaty Auth API",
+                "endpoints", Map.of(
+                        "signup", "POST /api/auth/signup",
+                        "login", "POST /api/auth/login",
+                        "refresh", "POST /api/auth/refresh",
+                        "change-password", "POST /api/auth/change-password (authenticated)"
+                )
+        ));
     }
 
     @PostMapping("/signup")

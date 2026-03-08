@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Link2, RefreshCw, Unlink, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { youcanService, YouCanStore } from '../services/youcanService'
 import { useStoreColor } from '../hooks/useStoreColor'
+import youcanLogo from '../images/youcan-logo.png'
 
 interface YouCanIntegrationProps {
   storeId: string
@@ -181,11 +182,10 @@ export default function YouCanIntegration({ storeId, onConnectionChange }: YouCa
           <div className="flex items-center space-x-3 mb-4">
             <div className="h-12 w-12 rounded-lg flex items-center justify-center bg-white border border-gray-200 overflow-hidden p-1">
               <img 
-                src="https://developer.youcan.shop/logo-with-shadow.webp" 
+                src={youcanLogo} 
                 alt="YouCan" 
                 className="h-full w-full object-contain"
                 onError={(e) => {
-                  // Fallback if image fails to load
                   const target = e.target as HTMLImageElement
                   target.style.display = 'none'
                   const parent = target.parentElement
@@ -245,11 +245,10 @@ export default function YouCanIntegration({ storeId, onConnectionChange }: YouCa
         <div className="text-center py-6">
           <div className="mx-auto w-16 h-16 rounded-lg flex items-center justify-center mb-4 bg-white border border-gray-200 overflow-hidden p-2">
             <img 
-              src="https://developer.youcan.shop/logo-with-shadow.webp" 
+              src={youcanLogo} 
               alt="YouCan" 
               className="h-full w-full object-contain"
               onError={(e) => {
-                // Fallback if image fails to load
                 const target = e.target as HTMLImageElement
                 target.style.display = 'none'
                 const parent = target.parentElement

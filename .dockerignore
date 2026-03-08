@@ -1,0 +1,22 @@
+# Build output
+target/
+build/
+
+# Git and IDE
+.git/
+.gitignore
+.idea/
+*.iml
+.vscode/
+
+# Local and env
+.env
+.env.*
+*.log
+
+# Scripts and docs (not needed in image)
+*.md
+*.sh
+cities.json
+
+# Keep .mvn and maven-wrapper.jar so ./mvnw works in Docker
