@@ -160,6 +160,9 @@ export default function StoresSettings() {
         <CreateStoreModal
           onClose={() => {
             setShowCreateModal(false)
+          }}
+          onSuccess={() => {
+            setShowCreateModal(false)
             loadStores()
           }}
         />

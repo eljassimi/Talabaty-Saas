@@ -23,7 +23,6 @@ export function getButtonStyle(color: string, variant: 'primary' | 'secondary' |
 }
 
 export function getHoverStyle(color: string, variant: 'primary' | 'secondary' | 'outline' = 'primary') {
-  const rgb = hexToRgb(color)
   const styles: Record<string, React.CSSProperties> = {
     primary: {
       backgroundColor: darkenColor(color, 10),

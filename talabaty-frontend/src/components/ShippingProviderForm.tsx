@@ -66,9 +66,7 @@ export default function ShippingProviderForm({
         customerId: formData.customerId,
         displayName: formData.displayName,
         providerType: formData.providerType,
-        // apiKey is required by the backend type, but for edit mode we allow leaving it blank.
-        // When blank, we keep the existing key on the server.
-        apiKey: formData.apiKey || existingProvider?.apiKey || '',
+        apiKey: formData.apiKey || '',
       }
       
       const provider = await storeService.createShippingProvider(storeId, submitData)

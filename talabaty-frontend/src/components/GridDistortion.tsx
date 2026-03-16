@@ -44,11 +44,11 @@ const GridDistortion: React.FC<GridDistortionProps> = ({
   imageSrc,
   className = ''
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
-  const planeRef = useRef<THREE.Mesh | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const sceneRef = useRef<any>(null);
+  const rendererRef = useRef<any>(null);
+  const cameraRef = useRef<any>(null);
+  const planeRef = useRef<any>(null);
   const imageAspectRef = useRef<number>(1);
   const animationIdRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
@@ -58,10 +58,10 @@ const GridDistortion: React.FC<GridDistortionProps> = ({
 
     const container = containerRef.current;
 
-    const scene = new THREE.Scene();
+    const scene = new (THREE as any).Scene();
     sceneRef.current = scene;
 
-    const renderer = new THREE.WebGLRenderer({
+    const renderer = new (THREE as any).WebGLRenderer({
       antialias: true,
       alpha: true,
       powerPreference: 'high-performance'
@@ -73,23 +73,23 @@ const GridDistortion: React.FC<GridDistortionProps> = ({
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    const camera = new THREE.OrthographicCamera(0, 0, 0, 0, -1000, 1000);
+    const camera = new (THREE as any).OrthographicCamera(0, 0, 0, 0, -1000, 1000);
     camera.position.z = 2;
     cameraRef.current = camera;
 
     const uniforms = {
       time: { value: 0 },
-      resolution: { value: new THREE.Vector4() },
-      uTexture: { value: null as THREE.Texture | null },
-      uDataTexture: { value: null as THREE.DataTexture | null }
+      resolution: { value: new (THREE as any).Vector4() },
+      uTexture: { value: null as any },
+      uDataTexture: { value: null as any }
     };
 
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load(imageSrc, (texture: THREE.Texture) => {
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
+    const textureLoader = new (THREE as any).TextureLoader();
+    textureLoader.load(imageSrc, (texture: any) => {
+      texture.minFilter = (THREE as any).LinearFilter;
+      texture.magFilter = (THREE as any).LinearFilter;
+      texture.wrapS = (THREE as any).ClampToEdgeWrapping;
+      texture.wrapT = (THREE as any).ClampToEdgeWrapping;
       imageAspectRef.current = texture.image.width / texture.image.height;
       uniforms.uTexture.value = texture;
       handleResize();
@@ -102,20 +102,20 @@ const GridDistortion: React.FC<GridDistortionProps> = ({
       data[i * 4 + 1] = Math.random() * 255 - 125;
     }
 
-    const dataTexture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat, THREE.FloatType);
+    const dataTexture = new (THREE as any).DataTexture(data, size, size, (THREE as any).RGBAFormat, (THREE as any).FloatType);
     dataTexture.needsUpdate = true;
     uniforms.uDataTexture.value = dataTexture;
 
-    const material = new THREE.ShaderMaterial({
-      side: THREE.DoubleSide,
+    const material = new (THREE as any).ShaderMaterial({
+      side: (THREE as any).DoubleSide,
       uniforms,
       vertexShader,
       fragmentShader,
       transparent: true
     });
 
-    const geometry = new THREE.PlaneGeometry(1, 1, size - 1, size - 1);
-    const plane = new THREE.Mesh(geometry, material);
+    const geometry = new (THREE as any).PlaneGeometry(1, 1, size - 1, size - 1);
+    const plane = new (THREE as any).Mesh(geometry, material);
     planeRef.current = plane;
     scene.add(plane);
 

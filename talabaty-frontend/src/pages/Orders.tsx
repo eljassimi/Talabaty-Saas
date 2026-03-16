@@ -4,7 +4,7 @@ import { orderService, Order } from '../services/orderService'
 import { storeService, Store } from '../services/storeService'
 import { youcanService } from '../services/youcanService'
 import { shippingService, TrackingResponse } from '../services/shippingService'
-import { Plus, Package, Search, ChevronDown, Calendar, MoreVertical, ChevronLeft, ChevronRight, Truck, AlertTriangle, RefreshCw, X, MessageCircle, Eye, Bike, Upload, CheckCircle, Clock, XCircle, FileText } from 'lucide-react'
+import { Plus, Package, Search, ChevronDown, Calendar, MoreVertical, ChevronLeft, ChevronRight, AlertTriangle, RefreshCw, X, MessageCircle, Eye, Bike, Upload, CheckCircle, Clock, XCircle, FileText } from 'lucide-react'
 import CreateOrderModal from '../components/CreateOrderModal'
 import UpdateOrderStatusModal from '../components/UpdateOrderStatusModal'
 import CreateBonDeLivraisonModal from '../components/CreateBonDeLivraisonModal'
@@ -20,16 +20,6 @@ function hexToRgb(hex: string) {
     g: parseInt(result[2], 16),
     b: parseInt(result[3], 16)
   } : { r: 2, g: 132, b: 199 }
-}
-
-// Get initials for avatar
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2)
 }
 
 // Pagination component
