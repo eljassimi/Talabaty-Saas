@@ -354,49 +354,6 @@ export default function Orders() {
   const endIndex = startIndex + itemsPerPage
   const paginatedOrders = filteredOrders.slice(startIndex, endIndex)
 
-  const getStatusColor = (status: Order['status']) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return 'bg-green-100 text-green-800'
-      case 'CONCLED':
-        return 'bg-red-100 text-red-800'
-      case 'APPEL_1':
-      case 'APPEL_2':
-        return 'bg-orange-100 text-orange-800'
-      case 'ENCOURS':
-        return 'bg-blue-100 text-blue-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  const getStatusLabel = (status: Order['status']) => {
-    const labels: Record<Order['status'], string> = {
-      'ENCOURS': 'En cours',
-      'CONFIRMED': 'Confirmed',
-      'CONCLED': 'Cancelled',
-      'APPEL_1': 'Appel 1',
-      'APPEL_2': 'Appel 2'
-    }
-    return labels[status] || status
-  }
-
-  const getStatusDot = (status: Order['status']) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return 'bg-green-500'
-      case 'CONCLED':
-        return 'bg-red-500'
-      case 'APPEL_1':
-      case 'APPEL_2':
-        return 'bg-orange-500'
-      case 'ENCOURS':
-        return 'bg-blue-500'
-      default:
-        return 'bg-gray-500'
-    }
-  }
-
 
   if (loading && orders.length === 0) {
     return (
