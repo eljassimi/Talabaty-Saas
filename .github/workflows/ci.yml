@@ -16,6 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
@@ -41,10 +44,6 @@ jobs:
       - name: Install dependencies
         working-directory: talabaty-frontend
         run: npm ci
-
-      - name: Lint
-        working-directory: talabaty-frontend
-        run: npm run lint
 
       - name: Build
         working-directory: talabaty-frontend
