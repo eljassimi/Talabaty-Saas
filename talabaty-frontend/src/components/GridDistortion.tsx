@@ -85,7 +85,7 @@ const GridDistortion: React.FC<GridDistortionProps> = ({
     };
 
     const textureLoader = new THREE.TextureLoader();
-    textureLoader.load(imageSrc, texture => {
+    textureLoader.load(imageSrc, (texture: THREE.Texture) => {
       texture.minFilter = THREE.LinearFilter;
       texture.magFilter = THREE.LinearFilter;
       texture.wrapS = THREE.ClampToEdgeWrapping;

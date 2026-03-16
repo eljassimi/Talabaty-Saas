@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import type React from 'react'
 import { storeService, CreateShippingProviderRequest, ShippingProvider } from '../services/storeService'
 import { useStoreColor } from '../hooks/useStoreColor'
 import { X } from 'lucide-react'
@@ -65,7 +66,9 @@ export default function ShippingProviderForm({
         customerId: formData.customerId,
         displayName: formData.displayName,
         providerType: formData.providerType,
-        ...(formData.apiKey ? { apiKey: formData.apiKey } : {}),
+        // apiKey is required by the backend type, but for edit mode we allow leaving it blank.
+        // When blank, we keep the existing key on the server.
+        apiKey: formData.apiKey || existingProvider?.apiKey || '',
       }
       
       const provider = await storeService.createShippingProvider(storeId, submitData)

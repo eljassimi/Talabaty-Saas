@@ -25,17 +25,6 @@ export interface NavItem {
   badge?: string | number
 }
 
-const allNavItems: NavItem[] = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Orders', href: '/orders', icon: Package },
-  { name: 'Stores', href: '/stores', icon: Store },
-  { name: 'Integrations', href: '/integrations', icon: Plug2 },
-  { name: 'Automations', href: '/automations', icon: MessageCircle },
-  { name: 'Team', href: '/users', icon: Users },
-  { name: 'My earnings', href: '/earnings', icon: Wallet },
-  { name: 'Payment requests', href: '/payment-requests', icon: Banknote },
-]
-
 interface SidebarProps {
   open: boolean
   onClose: () => void

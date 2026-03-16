@@ -1,4 +1,5 @@
 // Utility functions for store color styling
+import type React from 'react'
 
 export function getButtonStyle(color: string, variant: 'primary' | 'secondary' | 'outline' = 'primary') {
   const styles: Record<string, React.CSSProperties> = {

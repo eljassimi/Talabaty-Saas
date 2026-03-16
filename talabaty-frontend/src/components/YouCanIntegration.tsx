@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Link2, RefreshCw, Unlink, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { Link2, Unlink, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { youcanService, YouCanStore } from '../services/youcanService'
 import { useStoreColor } from '../hooks/useStoreColor'
 import youcanLogo from '../images/youcan-logo.png'
@@ -15,7 +15,6 @@ export default function YouCanIntegration({ storeId, onConnectionChange }: YouCa
   const [searchParams, setSearchParams] = useSearchParams()
   const [connectedStore, setConnectedStore] = useState<YouCanStore | null>(null)
   const [loading, setLoading] = useState(true)
-  const [syncing, setSyncing] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -80,35 +79,6 @@ export default function YouCanIntegration({ storeId, onConnectionChange }: YouCa
       console.error('Error connecting YouCan store:', err)
       setError(err.response?.data?.error || 'Failed to initiate YouCan connection')
       setConnecting(false)
-    }
-  }
-
-  const handleSync = async () => {
-    if (!connectedStore) return
-
-    try {
-      setSyncing(true)
-      setError(null)
-      setSuccess(null)
-
-      const response = await youcanService.syncOrders(connectedStore.id)
-      
-      if (response.success) {
-        setSuccess(`Successfully synced ${response.syncedCount || 0} orders`)
-        // Reload connected store to update lastSyncAt
-        await loadConnectedStore()
-        // Refresh the page after a short delay to show updated orders
-        setTimeout(() => {
-          window.location.reload()
-        }, 2000)
-      } else {
-        setError(response.error || 'Failed to sync orders')
-      }
-    } catch (err: any) {
-      console.error('Error syncing orders:', err)
-      setError(err.response?.data?.error || 'Failed to sync orders from YouCan')
-    } finally {
-      setSyncing(false)
     }
   }
 

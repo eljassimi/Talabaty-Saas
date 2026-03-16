@@ -12,6 +12,7 @@ interface AuthContextType {
     lastName: string
     accountName: string
     accountType: 'INDIVIDUAL' | 'BUSINESS'
+    phoneNumber: string
   }) => Promise<void>
   logout: () => void
   updateUser: (userData: Partial<User>) => void
@@ -55,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     lastName: string
     accountName: string
     accountType: 'INDIVIDUAL' | 'BUSINESS'
+    phoneNumber: string
   }) => {
     const response = await authService.signup(data)
     localStorage.setItem('accessToken', response.accessToken)

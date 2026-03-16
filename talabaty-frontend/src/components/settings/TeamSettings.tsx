@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { teamService, TeamMember } from '../../services/teamService'
 import { useAuth } from '../../contexts/AuthContext'
 import { useStoreColor } from '../../hooks/useStoreColor'
-import { Plus, UserPlus, Mail, Trash2, Ban } from 'lucide-react'
+import { UserPlus, Mail, Trash2 } from 'lucide-react'
 import CreateTeamMemberModal from '../CreateTeamMemberModal'
 
 export default function TeamSettings() {

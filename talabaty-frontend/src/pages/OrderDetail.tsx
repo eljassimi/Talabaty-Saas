@@ -3,13 +3,12 @@ import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { orderService, Order, SendToShippingRequest } from '../services/orderService'
 import { shippingService, TrackingResponse } from '../services/shippingService'
-import { Package, User, MapPin, Phone, DollarSign, Edit, Hash, Truck, AlertTriangle, RefreshCw, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { Package, User, MapPin, Phone, DollarSign, Edit, Hash, Truck, AlertTriangle, RefreshCw } from 'lucide-react'
 import SendToShippingModal from '../components/SendToShippingModal'
 import UpdateOrderModal from '../components/UpdateOrderModal'
 import { useStoreColor } from '../hooks/useStoreColor'
 import { findCityId } from '../utils/cityMapping'
 import { cityExistsInDeliveryPlatform } from '../utils/deliveryCities'
-import OzoneExpressLogo from '../images/ozone-express.svg'
 
 // Helper to convert hex to RGB
 function hexToRgb(hex: string) {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { storeService, Store, ShippingProvider } from '../../services/storeService'
 import { useStoreColor } from '../../hooks/useStoreColor'
-import { Truck, Plus, Settings } from 'lucide-react'
+import { Truck, Settings } from 'lucide-react'
 import ShippingProviderForm from '../ShippingProviderForm'
 import { DELIVERY_PROVIDERS, getProviderLogo } from '../../utils/deliveryProviders'
 

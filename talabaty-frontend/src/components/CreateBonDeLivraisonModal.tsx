@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { X, FileText, Download, Loader2, Copy, ExternalLink } from 'lucide-react'
+import { X, Loader2, Copy, ExternalLink } from 'lucide-react'
 import type { Order } from '../services/orderService'
 import { shippingService, type BonDeLivraisonResult } from '../services/shippingService'
 
