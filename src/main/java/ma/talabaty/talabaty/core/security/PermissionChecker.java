@@ -153,5 +153,22 @@ public class PermissionChecker {
                role == UserRole.ACCOUNT_OWNER || 
                role == UserRole.MANAGER;
     }
+
+    /**
+     * Check if user can access integrations (YouCan, WhatsApp link, Excel sync, etc.).
+     * Support team can only confirm orders; they cannot manage integrations.
+     */
+    public boolean canAccessIntegrations(UserRole role) {
+        return role == UserRole.PLATFORM_ADMIN ||
+               role == UserRole.ACCOUNT_OWNER ||
+               role == UserRole.MANAGER;
+    }
+
+    /**
+     * Check if user can manage support payment requests (view and approve/paid).
+     */
+    public boolean canManagePaymentRequests(UserRole role) {
+        return role == UserRole.PLATFORM_ADMIN || role == UserRole.ACCOUNT_OWNER;
+    }
 }
 

@@ -4,9 +4,10 @@ import { orderService, Order } from '../services/orderService'
 import { storeService, Store } from '../services/storeService'
 import { youcanService } from '../services/youcanService'
 import { shippingService, TrackingResponse } from '../services/shippingService'
-import { Plus, Package, Search, ChevronDown, Calendar, MoreVertical, ChevronLeft, ChevronRight, Truck, AlertTriangle, RefreshCw, X, MessageCircle, Eye, Bike, Upload, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { Plus, Package, Search, ChevronDown, Calendar, MoreVertical, ChevronLeft, ChevronRight, Truck, AlertTriangle, RefreshCw, X, MessageCircle, Eye, Bike, Upload, CheckCircle, Clock, XCircle, FileText } from 'lucide-react'
 import CreateOrderModal from '../components/CreateOrderModal'
 import UpdateOrderStatusModal from '../components/UpdateOrderStatusModal'
+import CreateBonDeLivraisonModal from '../components/CreateBonDeLivraisonModal'
 import { useStoreColor } from '../hooks/useStoreColor'
 import { cityExistsInDeliveryPlatform } from '../utils/deliveryCities'
 import TalabatyLogoSpinner from '../components/TalabatyLogoSpinner'
@@ -117,6 +118,7 @@ export default function Orders() {
   const [selectedStore, setSelectedStore] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showBonDeLivraisonModal, setShowBonDeLivraisonModal] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
@@ -537,6 +539,14 @@ export default function Orders() {
           <p className="mt-3 text-gray-600">Manage all your orders.</p>
         </div>
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowBonDeLivraisonModal(true)}
+                className="inline-flex items-center px-5 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-2xl text-gray-700 bg-white transition-all hover:bg-gray-50"
+                title="Create Bon de Livraison (Ozon Express)"
+              >
+                <FileText className="h-5 w-5 mr-2" />
+                Bon de Livraison
+              </button>
               <button
                 className="inline-flex items-center px-5 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-2xl text-gray-700 bg-white transition-all hover:bg-gray-50"
                 title="Export orders"
@@ -988,6 +998,15 @@ export default function Orders() {
             setSelectedOrder(null)
             loadOrders()
           }}
+        />
+      )}
+
+      {showBonDeLivraisonModal && (
+        <CreateBonDeLivraisonModal
+          orders={orders}
+          onClose={() => setShowBonDeLivraisonModal(false)}
+          onSuccess={() => loadOrders()}
+          storeColor={storeColor}
         />
       )}
 

@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react'
 import { storeService, Store } from '../services/storeService'
+import { useTheme } from '../contexts/ThemeContext'
+import { BRAND_COLORS } from '../constants/brand'
 import { X, Upload, Image as ImageIcon } from 'lucide-react'
 
 interface CreateStoreModalProps {
@@ -18,6 +20,8 @@ export default function CreateStoreModal({ onClose, onSuccess }: CreateStoreModa
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -73,13 +77,22 @@ export default function CreateStoreModal({ onClose, onSuccess }: CreateStoreModa
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">Create New Store</h3>
+    <div className="fixed inset-0 bg-black/40 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+      <div
+        className="relative rounded-xl w-full max-w-md border shadow-xl dark:shadow-none"
+        style={{
+          backgroundColor: isDark ? '#2A2D35' : '#FFFFFF',
+          borderColor: isDark ? '#3d4048' : '#E5E7EB',
+        }}
+      >
+        <div
+          className="flex items-center justify-between p-6 border-b"
+          style={{ borderColor: isDark ? '#3d4048' : '#E5E7EB' }}
+        >
+          <h3 className="text-lg font-bold" style={{ color: isDark ? '#F3F4F6' : '#111827' }}>Create New Store</h3>
           <button 
             onClick={onClose} 
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -93,7 +106,11 @@ export default function CreateStoreModal({ onClose, onSuccess }: CreateStoreModa
           )}
 
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium mb-2"
+              style={{ color: isDark ? '#E5E7EB' : '#374151' }}
+            >
               Store Name *
             </label>
             <input
@@ -102,14 +119,23 @@ export default function CreateStoreModal({ onClose, onSuccess }: CreateStoreModa
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 sm:text-sm"
+              style={{
+                backgroundColor: isDark ? '#222328' : '#FFFFFF',
+                borderColor: isDark ? '#4B5563' : '#D1D5DB',
+                color: isDark ? '#F3F4F6' : '#111827',
+                ['--tw-ring-color' as string]: BRAND_COLORS.primary,
+              }}
               placeholder="Enter store name"
             />
           </div>
 
           {/* Logo Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: isDark ? '#E5E7EB' : '#374151' }}
+            >
               Store Logo
             </label>
             <div className="flex items-center space-x-4">
@@ -118,7 +144,7 @@ export default function CreateStoreModal({ onClose, onSuccess }: CreateStoreModa
                   <img 
                     src={logoPreview} 
                     alt="Logo preview" 
-                    className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200"
+                    className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 dark:border-[#3d4048]"
                   />
                   <button
                     type="button"
@@ -137,7 +163,11 @@ export default function CreateStoreModal({ onClose, onSuccess }: CreateStoreModa
               ) : (
                 <div 
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                  className="w-20 h-20 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-colors"
+                  style={{
+                    borderColor: isDark ? '#4B5563' : '#D1D5DB',
+                    backgroundColor: isDark ? '#222328' : '#FFFFFF',
+                  }}
                 >
                   <ImageIcon className="h-8 w-8 text-gray-400" />
                 </div>
@@ -153,12 +183,18 @@ export default function CreateStoreModal({ onClose, onSuccess }: CreateStoreModa
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="inline-flex items-center px-4 py-2 border rounded-lg shadow-sm text-sm font-medium focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: isDark ? '#222328' : '#FFFFFF',
+                    borderColor: isDark ? '#4B5563' : '#D1D5DB',
+                    color: isDark ? '#E5E7EB' : '#374151',
+                    ['--tw-ring-color' as string]: BRAND_COLORS.primary,
+                  }}
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   {logoPreview ? 'Change Logo' : 'Upload Logo'}
                 </button>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   PNG, JPG up to 2MB
                 </p>
               </div>
@@ -167,7 +203,11 @@ export default function CreateStoreModal({ onClose, onSuccess }: CreateStoreModa
 
           {/* Color Picker */}
           <div>
-            <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="color"
+              className="block text-sm font-medium mb-2"
+              style={{ color: isDark ? '#E5E7EB' : '#374151' }}
+            >
               Store Color
             </label>
             <div className="flex items-center space-x-3">
@@ -176,24 +216,35 @@ export default function CreateStoreModal({ onClose, onSuccess }: CreateStoreModa
                 type="color"
                 value={formData.color}
                 onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                className="h-10 w-20 border border-gray-300 rounded-lg cursor-pointer"
+                className="h-10 w-20 border rounded-lg cursor-pointer"
+                style={{ borderColor: isDark ? '#4B5563' : '#D1D5DB' }}
               />
               <input
                 type="text"
                 value={formData.color}
                 onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="flex-1 px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 sm:text-sm"
+                style={{
+                  backgroundColor: isDark ? '#222328' : '#FFFFFF',
+                  borderColor: isDark ? '#4B5563' : '#D1D5DB',
+                  color: isDark ? '#F3F4F6' : '#111827',
+                  ['--tw-ring-color' as string]: BRAND_COLORS.primary,
+                }}
                 placeholder="#123133"
                 pattern="^#[0-9A-Fa-f]{6}$"
               />
             </div>
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Choose a color theme for your store
             </p>
           </div>
 
           <div>
-            <label htmlFor="managerId" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="managerId"
+              className="block text-sm font-medium mb-2"
+              style={{ color: isDark ? '#E5E7EB' : '#374151' }}
+            >
               Manager ID (Optional)
             </label>
             <input
@@ -202,25 +253,40 @@ export default function CreateStoreModal({ onClose, onSuccess }: CreateStoreModa
               value={formData.managerId}
               onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
               placeholder="Enter manager UUID (optional)"
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 sm:text-sm"
+              style={{
+                backgroundColor: isDark ? '#222328' : '#FFFFFF',
+                borderColor: isDark ? '#4B5563' : '#D1D5DB',
+                color: isDark ? '#F3F4F6' : '#111827',
+                ['--tw-ring-color' as string]: BRAND_COLORS.primary,
+              }}
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Optional: You can assign a manager later.
             </p>
           </div>
 
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div
+            className="flex items-center justify-end space-x-3 pt-4 border-t"
+            style={{ borderColor: isDark ? '#3d4048' : '#E5E7EB' }}
+          >
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium border rounded-lg transition-colors"
+              style={{
+                backgroundColor: isDark ? '#222328' : '#FFFFFF',
+                borderColor: isDark ? '#4B5563' : '#D1D5DB',
+                color: isDark ? '#E5E7EB' : '#374151',
+              }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#FF6E00] rounded-lg hover:bg-[#123133] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{ backgroundColor: BRAND_COLORS.secondary }}
             >
               {loading ? 'Creating...' : 'Create Store'}
             </button>

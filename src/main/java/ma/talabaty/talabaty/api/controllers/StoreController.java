@@ -9,7 +9,10 @@ import ma.talabaty.talabaty.domain.shipping.model.ShippingProvider;
 import ma.talabaty.talabaty.domain.shipping.service.ShippingProviderService;
 import ma.talabaty.talabaty.core.security.PermissionChecker;
 import ma.talabaty.talabaty.domain.stores.model.Store;
+import ma.talabaty.talabaty.domain.stores.model.StoreSettings;
+import ma.talabaty.talabaty.domain.orders.repository.OrderRepository;
 import ma.talabaty.talabaty.domain.stores.service.StoreService;
+import ma.talabaty.talabaty.domain.whatsapp.WhatsAppService;
 import ma.talabaty.talabaty.domain.users.model.User;
 import ma.talabaty.talabaty.domain.users.model.UserRole;
 import ma.talabaty.talabaty.domain.users.repository.UserRepository;
@@ -20,9 +23,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/stores")
@@ -34,16 +40,21 @@ public class StoreController {
     private final ShippingProviderService shippingProviderService;
     private final UserRepository userRepository;
     private final PermissionChecker permissionChecker;
+    private final WhatsAppService whatsAppService;
+    private final OrderRepository orderRepository;
 
     public StoreController(StoreService storeService, StoreMapper storeMapper, JwtTokenProvider tokenProvider,
                           ShippingProviderService shippingProviderService, UserRepository userRepository,
-                          PermissionChecker permissionChecker) {
+                          PermissionChecker permissionChecker, WhatsAppService whatsAppService,
+                          OrderRepository orderRepository) {
         this.storeService = storeService;
         this.storeMapper = storeMapper;
         this.tokenProvider = tokenProvider;
         this.shippingProviderService = shippingProviderService;
         this.userRepository = userRepository;
         this.permissionChecker = permissionChecker;
+        this.whatsAppService = whatsAppService;
+        this.orderRepository = orderRepository;
     }
 
 
@@ -202,6 +213,207 @@ public class StoreController {
         return ResponseEntity.ok(providers);
     }
 
+    @GetMapping("/{id}/whatsapp-settings")
+    public ResponseEntity<WhatsAppSettingsResponse> getWhatsAppSettings(@PathVariable String id, Authentication authentication) {
+        UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
+        Store store = storeService.findByAccountIdAndId(accountId, UUID.fromString(id))
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        UUID userId = AuthenticationHelper.getUserIdFromAuth(authentication);
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        if (!permissionChecker.canViewStore(user.getRole(), userId, store)) {
+            throw new AccessDeniedException("You don't have permission to access this store");
+        }
+        StoreSettings settings = storeService.getOrCreateSettings(store);
+        WhatsAppSettingsResponse res = new WhatsAppSettingsResponse();
+        res.setWhatsappAutomationEnabled(settings.isWhatsappAutomationEnabled());
+        res.setWhatsappTemplateConfirmed(settings.getWhatsappTemplateConfirmed() != null ? settings.getWhatsappTemplateConfirmed() : "");
+        res.setWhatsappTemplateDelivered(settings.getWhatsappTemplateDelivered() != null ? settings.getWhatsappTemplateDelivered() : "");
+        res.setSendingConfigured(whatsAppService.isConfigured());
+        return ResponseEntity.ok(res);
+    }
+
+    @PatchMapping("/{id}/whatsapp-settings")
+    public ResponseEntity<WhatsAppSettingsResponse> updateWhatsAppSettings(
+            @PathVariable String id,
+            @RequestBody WhatsAppSettingsRequest request,
+            Authentication authentication) {
+        UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
+        Store store = storeService.findByAccountIdAndId(accountId, UUID.fromString(id))
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        UUID userId = AuthenticationHelper.getUserIdFromAuth(authentication);
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        if (!permissionChecker.canUpdateStore(user.getRole(), userId, store)) {
+            throw new AccessDeniedException("You don't have permission to update this store");
+        }
+        UUID storeUuid = UUID.fromString(id);
+        storeService.updateWhatsAppAutomation(
+                storeUuid,
+                request.getWhatsappAutomationEnabled(),
+                request.getWhatsappTemplateConfirmed(),
+                request.getWhatsappTemplateDelivered()
+        );
+        Store updated = storeService.findById(storeUuid).orElse(store);
+        StoreSettings settings = storeService.getOrCreateSettings(updated);
+        WhatsAppSettingsResponse res = new WhatsAppSettingsResponse();
+        res.setWhatsappAutomationEnabled(settings.isWhatsappAutomationEnabled());
+        res.setWhatsappTemplateConfirmed(settings.getWhatsappTemplateConfirmed() != null ? settings.getWhatsappTemplateConfirmed() : "");
+        res.setWhatsappTemplateDelivered(settings.getWhatsappTemplateDelivered() != null ? settings.getWhatsappTemplateDelivered() : "");
+        res.setSendingConfigured(whatsAppService.isConfigured());
+        return ResponseEntity.ok(res);
+    }
+
+    /**
+     * WhatsApp link status for a specific store.
+     * This lets each store have its own WhatsApp session (phone/account) when using the free bridge.
+     */
+    @GetMapping("/{id}/whatsapp-link-status")
+    public ResponseEntity<Map<String, Object>> getStoreWhatsAppLinkStatus(
+            @PathVariable String id,
+            Authentication authentication
+    ) {
+        UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
+        UUID storeUuid = UUID.fromString(id);
+        Store store = storeService.findByAccountIdAndId(accountId, storeUuid)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        UUID userId = AuthenticationHelper.getUserIdFromAuth(authentication);
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        if (!permissionChecker.canViewStore(user.getRole(), userId, store)) {
+            throw new AccessDeniedException("You don't have permission to access this store");
+        }
+        Map<String, Object> body = new HashMap<>();
+        body.put("configured", whatsAppService.isConfigured());
+        if (whatsAppService.isTwilioConfigured()) {
+            body.put("provider", "twilio");
+            body.put("ready", true);
+            return ResponseEntity.ok(body);
+        }
+        if (whatsAppService.isLocalBridgeConfigured()) {
+            body.put("provider", "bridge");
+            Map<String, Object> bridge = whatsAppService.getBridgeLinkStatus(storeUuid);
+            body.put("ready", bridge.getOrDefault("ready", false));
+            if (bridge.containsKey("qr")) {
+                body.put("qr", bridge.get("qr"));
+            }
+            body.put("initializing", bridge.getOrDefault("initializing", false));
+            if (bridge.containsKey("error")) {
+                body.put("error", bridge.get("error"));
+            }
+            if (bridge.containsKey("bridgeError")) {
+                body.put("bridgeError", bridge.get("bridgeError"));
+            }
+            if (bridge.containsKey("reason")) {
+                body.put("reason", bridge.get("reason"));
+            }
+            return ResponseEntity.ok(body);
+        }
+        return ResponseEntity.ok(body);
+    }
+
+    /** Send a promotion message to all customers who have ordered from this store. */
+    @PostMapping("/{id}/whatsapp-broadcast")
+    public ResponseEntity<Map<String, Object>> whatsappBroadcast(
+            @PathVariable String id,
+            @RequestBody WhatsAppBroadcastRequest request,
+            Authentication authentication) {
+        UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
+        Store store = storeService.findByAccountIdAndId(accountId, UUID.fromString(id))
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        UUID userId = AuthenticationHelper.getUserIdFromAuth(authentication);
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        if (!permissionChecker.canUpdateStore(user.getRole(), userId, store)) {
+            throw new AccessDeniedException("You don't have permission to update this store");
+        }
+        if (!whatsAppService.isConfigured()) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("error", "WhatsApp is not configured. Set Twilio credentials or whatsapp.local.url (free bridge).");
+            return ResponseEntity.badRequest().body(err);
+        }
+        String message = request.getMessage();
+        if (message == null || message.isBlank()) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("error", "Message is required.");
+            return ResponseEntity.badRequest().body(err);
+        }
+        UUID storeUuid = UUID.fromString(id);
+        List<String> phones = orderRepository.findDistinctCustomerPhonesByStoreId(storeUuid);
+        int sent = 0;
+        int failed = 0;
+        java.util.List<String> failedReasons = new java.util.ArrayList<>();
+        for (String phone : phones) {
+                try {
+                String err = whatsAppService.sendWithReason(storeUuid, phone, message);
+                if (err == null) {
+                    sent++;
+                } else {
+                    failed++;
+                    failedReasons.add(phone + ": " + err);
+                }
+            } catch (Exception e) {
+                failed++;
+                failedReasons.add(phone + ": " + (e.getMessage() != null ? e.getMessage() : "Error"));
+            }
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("total", phones.size());
+        result.put("sent", sent);
+        result.put("failed", failed);
+        if (!failedReasons.isEmpty()) {
+            result.put("failedReasons", failedReasons);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{id}/support-revenue-settings")
+    public ResponseEntity<Map<String, Object>> getSupportRevenueSettings(
+            @PathVariable String id,
+            Authentication authentication) {
+        UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
+        Store store = storeService.findByAccountIdAndId(accountId, UUID.fromString(id))
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        UUID userId = AuthenticationHelper.getUserIdFromAuth(authentication);
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        if (!permissionChecker.canViewStore(user.getRole(), userId, store)) {
+            throw new AccessDeniedException("You don't have permission to view this store");
+        }
+        StoreSettings settings = storeService.getOrCreateSettings(store);
+        Map<String, Object> body = new HashMap<>();
+        body.put("pricePerOrderConfirmedMad", settings.getPricePerOrderConfirmedMad());
+        body.put("pricePerOrderDeliveredMad", settings.getPricePerOrderDeliveredMad());
+        return ResponseEntity.ok(body);
+    }
+
+    @PatchMapping("/{id}/support-revenue-settings")
+    public ResponseEntity<Map<String, Object>> updateSupportRevenueSettings(
+            @PathVariable String id,
+            @RequestBody Map<String, Object> request,
+            Authentication authentication) {
+        UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
+        Store store = storeService.findByAccountIdAndId(accountId, UUID.fromString(id))
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+        UUID userId = AuthenticationHelper.getUserIdFromAuth(authentication);
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        if (!permissionChecker.canUpdateStore(user.getRole(), userId, store)) {
+            throw new AccessDeniedException("You don't have permission to update this store");
+        }
+        BigDecimal priceConfirmed = request.get("pricePerOrderConfirmedMad") != null
+                ? new BigDecimal(request.get("pricePerOrderConfirmedMad").toString()) : null;
+        BigDecimal priceDelivered = request.get("pricePerOrderDeliveredMad") != null
+                ? new BigDecimal(request.get("pricePerOrderDeliveredMad").toString()) : null;
+        storeService.updateSupportRevenuePrices(UUID.fromString(id), priceConfirmed, priceDelivered);
+        Store updated = storeService.findById(UUID.fromString(id)).orElse(store);
+        StoreSettings settings = storeService.getOrCreateSettings(updated);
+        Map<String, Object> body = new HashMap<>();
+        body.put("pricePerOrderConfirmedMad", settings.getPricePerOrderConfirmedMad());
+        body.put("pricePerOrderDeliveredMad", settings.getPricePerOrderDeliveredMad());
+        return ResponseEntity.ok(body);
+    }
+
     // Inner classes for request DTOs
     public static class CreateStoreRequest {
         private String name;
@@ -309,6 +521,41 @@ public class StoreController {
         public void setDisplayName(String displayName) {
             this.displayName = displayName;
         }
+    }
+
+    public static class WhatsAppBroadcastRequest {
+        private String message;
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+    }
+
+    public static class WhatsAppSettingsRequest {
+        private Boolean whatsappAutomationEnabled;
+        private String whatsappTemplateConfirmed;
+        private String whatsappTemplateDelivered;
+
+        public Boolean getWhatsappAutomationEnabled() { return whatsappAutomationEnabled; }
+        public void setWhatsappAutomationEnabled(Boolean whatsappAutomationEnabled) { this.whatsappAutomationEnabled = whatsappAutomationEnabled; }
+        public String getWhatsappTemplateConfirmed() { return whatsappTemplateConfirmed; }
+        public void setWhatsappTemplateConfirmed(String whatsappTemplateConfirmed) { this.whatsappTemplateConfirmed = whatsappTemplateConfirmed; }
+        public String getWhatsappTemplateDelivered() { return whatsappTemplateDelivered; }
+        public void setWhatsappTemplateDelivered(String whatsappTemplateDelivered) { this.whatsappTemplateDelivered = whatsappTemplateDelivered; }
+    }
+
+    public static class WhatsAppSettingsResponse {
+        private boolean whatsappAutomationEnabled;
+        private String whatsappTemplateConfirmed;
+        private String whatsappTemplateDelivered;
+        private boolean sendingConfigured;
+
+        public boolean isWhatsappAutomationEnabled() { return whatsappAutomationEnabled; }
+        public void setWhatsappAutomationEnabled(boolean whatsappAutomationEnabled) { this.whatsappAutomationEnabled = whatsappAutomationEnabled; }
+        public String getWhatsappTemplateConfirmed() { return whatsappTemplateConfirmed; }
+        public void setWhatsappTemplateConfirmed(String whatsappTemplateConfirmed) { this.whatsappTemplateConfirmed = whatsappTemplateConfirmed; }
+        public String getWhatsappTemplateDelivered() { return whatsappTemplateDelivered; }
+        public void setWhatsappTemplateDelivered(String whatsappTemplateDelivered) { this.whatsappTemplateDelivered = whatsappTemplateDelivered; }
+        public boolean isSendingConfigured() { return sendingConfigured; }
+        public void setSendingConfigured(boolean sendingConfigured) { this.sendingConfigured = sendingConfigured; }
     }
 }
 

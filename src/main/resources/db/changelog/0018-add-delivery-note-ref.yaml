@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0018-add-delivery-note-ref
+      author: assistant
+      changes:
+        - sql:
+            sql: ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_note_ref VARCHAR(120);

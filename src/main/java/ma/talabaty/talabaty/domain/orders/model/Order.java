@@ -45,6 +45,9 @@ public class Order {
     @Column(name = "ozon_tracking_number", length = 120)
     private String ozonTrackingNumber;
 
+    @Column(name = "delivery_note_ref", length = 120)
+    private String deliveryNoteRef;
+
     @Column(name = "customer_name", nullable = false, length = 180)
     private String customerName;
 
@@ -130,6 +133,14 @@ public class Order {
 
     public void setOzonTrackingNumber(String ozonTrackingNumber) {
         this.ozonTrackingNumber = ozonTrackingNumber;
+    }
+
+    public String getDeliveryNoteRef() {
+        return deliveryNoteRef;
+    }
+
+    public void setDeliveryNoteRef(String deliveryNoteRef) {
+        this.deliveryNoteRef = deliveryNoteRef;
     }
 
     public String getCustomerName() {

@@ -39,6 +39,20 @@ export interface CreateShippingProviderRequest {
   providerType?: string
 }
 
+export interface WhatsAppSettings {
+  whatsappAutomationEnabled: boolean
+  whatsappTemplateConfirmed: string
+  whatsappTemplateDelivered: string
+  /** True when Twilio is configured in the backend; otherwise messages are not sent */
+  sendingConfigured?: boolean
+}
+
+export interface WhatsAppSettingsUpdate {
+  whatsappAutomationEnabled?: boolean
+  whatsappTemplateConfirmed?: string
+  whatsappTemplateDelivered?: string
+}
+
 export const storeService = {
   async getStores(): Promise<Store[]> {
     const response = await api.get<Store[]>('/stores')
@@ -75,6 +89,48 @@ export const storeService = {
   ): Promise<ShippingProvider> {
     const response = await api.post<ShippingProvider>(
       `/stores/${storeId}/shipping-providers`,
+      data
+    )
+    return response.data
+  },
+
+  async getWhatsAppSettings(storeId: string): Promise<WhatsAppSettings> {
+    const response = await api.get<WhatsAppSettings>(`/stores/${storeId}/whatsapp-settings`)
+    return response.data
+  },
+
+  async updateWhatsAppSettings(storeId: string, data: WhatsAppSettingsUpdate): Promise<WhatsAppSettings> {
+    const response = await api.patch<WhatsAppSettings>(`/stores/${storeId}/whatsapp-settings`, data)
+    return response.data
+  },
+
+  /** Send a promotion message to all customers of the store (distinct phones from orders). */
+  async sendWhatsAppBroadcast(
+    storeId: string,
+    message: string
+  ): Promise<{ total: number; sent: number; failed: number; failedReasons?: string[] }> {
+    const response = await api.post<{
+      total: number
+      sent: number
+      failed: number
+      failedReasons?: string[]
+    }>(`/stores/${storeId}/whatsapp-broadcast`, { message })
+    return response.data
+  },
+
+  async getSupportRevenueSettings(storeId: string): Promise<{ pricePerOrderConfirmedMad: number; pricePerOrderDeliveredMad: number }> {
+    const response = await api.get<{ pricePerOrderConfirmedMad: number; pricePerOrderDeliveredMad: number }>(
+      `/stores/${storeId}/support-revenue-settings`
+    )
+    return response.data
+  },
+
+  async updateSupportRevenueSettings(
+    storeId: string,
+    data: { pricePerOrderConfirmedMad?: number; pricePerOrderDeliveredMad?: number }
+  ): Promise<{ pricePerOrderConfirmedMad: number; pricePerOrderDeliveredMad: number }> {
+    const response = await api.patch<{ pricePerOrderConfirmedMad: number; pricePerOrderDeliveredMad: number }>(
+      `/stores/${storeId}/support-revenue-settings`,
       data
     )
     return response.data

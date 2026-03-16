@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { userService, User } from '../services/userService'
 import { storeService } from '../services/storeService'
+import { teamService, type TeamMember } from '../services/teamService'
 import { Users as UsersIcon, Ban, UserCheck, Plus, Search, Mail, MoreVertical, ChevronDown } from 'lucide-react'
 import CreateTeamMemberModal from '../components/CreateTeamMemberModal'
 import { useStoreColor } from '../hooks/useStoreColor'
@@ -25,12 +26,13 @@ export default function Users() {
   const { user: currentUser } = useAuth()
   const { storeColor } = useStoreColor()
   const [users, setUsers] = useState<User[]>([])
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [bannedUsers, setBannedUsers] = useState<User[]>([])
   const [stores, setStores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'all' | 'banned'>('all')
   const [showTeamMemberModal, setShowTeamMemberModal] = useState(false)
-  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null)
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(currentUser?.selectedStoreId ?? null)
   const [searchQuery, setSearchQuery] = useState('')
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null)
 
@@ -43,6 +45,23 @@ export default function Users() {
       loadStores()
     }
   }, [isAdmin])
+
+  // Keep local selected store in sync with the user's selectedStoreId (header switcher)
+  useEffect(() => {
+    if (isAdmin && currentUser?.selectedStoreId) {
+      setSelectedStoreId(currentUser.selectedStoreId)
+    }
+  }, [isAdmin, currentUser?.selectedStoreId])
+
+  useEffect(() => {
+    // Load team members for the selected store so "People" reflects per-store teams,
+    // not the whole account.
+    if (isAdmin && selectedStoreId) {
+      loadTeamMembers(selectedStoreId)
+    } else {
+      setTeamMembers([])
+    }
+  }, [isAdmin, selectedStoreId])
 
   // Close action menu when clicking outside
   useEffect(() => {
@@ -82,11 +101,27 @@ export default function Users() {
     try {
       const data = await storeService.getStores()
       setStores(data)
-      if (data.length > 0 && !selectedStoreId) {
-        setSelectedStoreId(data[0].id)
+      if (data.length > 0) {
+        // Prefer the user's currently selected store if it exists in the list
+        const preferredId = currentUser?.selectedStoreId
+        if (preferredId && data.some((s) => s.id === preferredId)) {
+          setSelectedStoreId(preferredId)
+        } else if (!selectedStoreId) {
+          setSelectedStoreId(data[0].id)
+        }
       }
     } catch (error) {
       console.error('Error loading stores:', error)
+    }
+  }
+
+  const loadTeamMembers = async (storeId: string) => {
+    try {
+      const data = await teamService.getTeamMembers(storeId)
+      setTeamMembers(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Error loading team members:', error)
+      setTeamMembers([])
     }
   }
 
@@ -152,7 +187,26 @@ export default function Users() {
     return role.replace('_', ' ')
   }
 
-  const displayUsers = activeTab === 'all' ? users : bannedUsers
+  // For "All" tab show only team members of the selected store (per-store team),
+  // while "Banned" tab still shows banned users at account level.
+  const displayUsers: User[] =
+    activeTab === 'banned'
+      ? bannedUsers
+      : teamMembers.map((member) => {
+          const base = member.userId ? users.find((u) => u.id === member.userId) : undefined
+          return {
+            id: member.userId || member.id,
+            email: member.email || member.externalMemberEmail || base?.email || '',
+            firstName: member.firstName || base?.firstName || '',
+            lastName: member.lastName || base?.lastName || '',
+            phoneNumber: base?.phoneNumber,
+            role: (base?.role as User['role']) || (member.role === 'MANAGER' ? 'MANAGER' : 'SUPPORT'),
+            status: base?.status || 'ACTIVE',
+            lastLoginAt: base?.lastLoginAt,
+            createdAt: base?.createdAt || member.createdAt,
+            updatedAt: base?.updatedAt || member.updatedAt,
+          }
+        })
 
   const filteredUsers = displayUsers.filter((user) => {
     const query = searchQuery.toLowerCase()
@@ -239,7 +293,7 @@ export default function Users() {
         >
           <div className="flex items-center">
             <UsersIcon className="h-4 w-4 mr-2" />
-            All ({users.length})
+            All ({displayUsers.length})
           </div>
         </button>
         <button

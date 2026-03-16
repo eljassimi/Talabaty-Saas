@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { storeService, Store } from '../services/storeService'
 import { userService } from '../services/userService'
 import { useAuth } from '../contexts/AuthContext'
-import { Store as StoreIcon, Check, Plus } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
+import { Store as StoreIcon, Check, Plus, Sun, Moon } from 'lucide-react'
 import CreateStoreModal from '../components/CreateStoreModal'
 import { BRAND_COLORS } from '../constants/brand'
 import TalabatyLogo from '../images/talabaty-logo.png'
@@ -14,6 +15,7 @@ export default function SelectStore() {
   const [selecting, setSelecting] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const { user, updateUser } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export default function SelectStore() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#222328]">
         <div 
           className="animate-spin rounded-full h-12 w-12 border-2 border-transparent"
           style={{
@@ -65,7 +67,16 @@ export default function SelectStore() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="relative min-h-screen bg-white dark:bg-[#222328] py-12 px-4 sm:px-6 lg:px-8">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="absolute top-6 right-6 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#2A2D35] transition-colors"
+        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      >
+        {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      </button>
+
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -76,8 +87,8 @@ export default function SelectStore() {
               className="h-10 w-auto"
             />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">Select a Store</h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Select a Store</h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Choose a store to work with. You can see all stores you belong to, including stores from different accounts where you are a team member.
           </p>
           <div className="mt-4">
@@ -103,12 +114,12 @@ export default function SelectStore() {
 
         {/* Stores Grid */}
         {stores.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <div className="bg-white dark:bg-[#2A2D35] rounded-xl shadow-sm dark:shadow-none border border-gray-200 dark:border-[#3d4048] p-12 text-center">
+            <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-[#3d4048] rounded-full flex items-center justify-center mb-4">
               <StoreIcon className="h-8 w-8 text-gray-400" />
             </div>
-            <h3 className="text-sm font-medium text-gray-900">No stores available</h3>
-            <p className="mt-1 text-sm text-gray-500 mb-6">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">No stores available</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 mb-6">
               Create your first store to get started.
             </p>
             <button
@@ -138,19 +149,22 @@ export default function SelectStore() {
                   key={store.id}
                   onClick={() => !selecting && handleSelectStore(store.id)}
                   disabled={selecting}
-                  className={`bg-white rounded-xl shadow-sm border-2 p-6 hover:shadow-lg transition-all text-left relative group ${
+                  className={`rounded-xl shadow-sm dark:shadow-none border-2 p-6 hover:shadow-lg dark:hover:shadow-none transition-all text-left relative group ${
                     isSelected 
-                      ? 'border-green-500 bg-green-50' 
-                      : 'border-gray-200 hover:border-blue-300'
+                      ? 'border-green-500 bg-green-50 dark:bg-emerald-950/30' 
+                      : 'border-gray-200 dark:border-[#3d4048]'
                   } ${selecting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                  style={isSelected ? { borderColor: storeColor } : {}}
+                  style={{
+                    backgroundColor: isSelected ? undefined : theme === 'dark' ? '#2A2D35' : '#FFFFFF',
+                    borderColor: isSelected ? storeColor : undefined,
+                  }}
                 >
                   <div className="flex items-center justify-between mb-4">
                     {store.logoUrl ? (
                       <img 
                         src={store.logoUrl} 
                         alt={store.name} 
-                        className="w-16 h-16 object-cover rounded-xl shadow-md border-2 border-gray-200"
+                        className="w-16 h-16 object-cover rounded-xl shadow-md border-2 border-gray-200 dark:border-[#3d4048]"
                       />
                     ) : (
                       <div 
@@ -166,8 +180,8 @@ export default function SelectStore() {
                       </div>
                     )}
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{store.name}</h3>
-                  <p className="text-sm text-gray-500">Code: {store.code || 'N/A'}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{store.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Code: {store.code || 'N/A'}</p>
                   {isSelected && (
                     <p className="mt-3 text-sm font-medium" style={{ color: storeColor }}>
                       Currently Selected

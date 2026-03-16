@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { orderService, Order } from '../services/orderService'
 import { useStoreColor } from '../hooks/useStoreColor'
 import {
@@ -22,7 +23,13 @@ import { BRAND_COLORS } from '../constants/brand'
 
 export default function Dashboard() {
   const { user } = useAuth()
+  const { theme } = useTheme()
   const { storeColor } = useStoreColor()
+  const isDark = theme === 'dark'
+  const textPrimary = isDark ? '#F9FAFB' : '#111827'
+  const textSecondary = isDark ? '#9CA3AF' : '#6B7280'
+  const inputBg = isDark ? '#2A2D35' : '#FFFFFF'
+  const inputBorder = isDark ? '#3d4048' : '#E5E7EB'
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState(() => {
@@ -107,8 +114,8 @@ export default function Dashboard() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-[#111827]">Dashboard</h1>
-            <p className="mt-1 text-sm text-[#6B7280]">
+            <h1 className="text-2xl font-bold" style={{ color: textPrimary }}>Dashboard</h1>
+            <p className="mt-1 text-sm" style={{ color: textSecondary }}>
               Store performance and key metrics
             </p>
           </div>
@@ -122,22 +129,32 @@ export default function Dashboard() {
           </Link>
         </div>
         {/* Filter by creation time */}
-        <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+        <div className="flex items-center gap-2 text-sm" style={{ color: textSecondary }}>
           <span>Filter by creation time</span>
           <input
             type="date"
             value={dateRange.from.toISOString().slice(0, 10)}
             onChange={(e) => setDateRange((r) => ({ ...r, from: new Date(e.target.value) }))}
-            className="h-9 px-3 rounded-lg border border-[#E6E8EC] bg-white text-[#111827] focus:outline-none focus:ring-2 focus:ring-offset-0"
-            style={{ ['--tw-ring-color' as string]: storeColor }}
+            className="h-9 px-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-offset-0"
+            style={{
+              backgroundColor: inputBg,
+              borderColor: inputBorder,
+              color: textPrimary,
+              ['--tw-ring-color' as string]: storeColor,
+            }}
           />
           <span>to</span>
           <input
             type="date"
             value={dateRange.to.toISOString().slice(0, 10)}
             onChange={(e) => setDateRange((r) => ({ ...r, to: new Date(e.target.value) }))}
-            className="h-9 px-3 rounded-lg border border-[#E6E8EC] bg-white text-[#111827] focus:outline-none focus:ring-2 focus:ring-offset-0"
-            style={{ ['--tw-ring-color' as string]: storeColor }}
+            className="h-9 px-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-offset-0"
+            style={{
+              backgroundColor: inputBg,
+              borderColor: inputBorder,
+              color: textPrimary,
+              ['--tw-ring-color' as string]: storeColor,
+            }}
           />
         </div>
       </div>
@@ -208,13 +225,13 @@ export default function Dashboard() {
         }}
       >
         <ChartCard title="Orders" subtitle="By day in selected range">
-          <OrdersChart orders={filteredOrders} brandColor={storeColor} days={14} />
+          <OrdersChart orders={filteredOrders} brandColor={storeColor} days={14} isDark={isDark} />
         </ChartCard>
         <ChartCard title="Revenue" subtitle={`${stats.currency} in selected range`}>
-          <RevenueChart orders={filteredOrders} brandColor={storeColor} days={14} />
+          <RevenueChart orders={filteredOrders} brandColor={storeColor} days={14} isDark={isDark} />
         </ChartCard>
         <ChartCard title="Orders by city" subtitle="Distribution">
-          <OrdersByCityChart orders={filteredOrders} brandColor={storeColor} />
+          <OrdersByCityChart orders={filteredOrders} brandColor={storeColor} isDark={isDark} />
         </ChartCard>
       </div>
     </div>

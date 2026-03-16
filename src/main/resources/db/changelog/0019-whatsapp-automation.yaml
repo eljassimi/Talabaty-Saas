@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0019-whatsapp-automation
+      author: assistant
+      changes:
+        - addColumn:
+            tableName: store_settings
+            columns:
+              - column:
+                  name: whatsapp_automation_enabled
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+                  defaultValueBoolean: false
+              - column:
+                  name: whatsapp_template_confirmed
+                  type: TEXT
+              - column:
+                  name: whatsapp_template_delivered
+                  type: TEXT

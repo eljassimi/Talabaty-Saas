@@ -2,6 +2,8 @@ package ma.talabaty.talabaty.domain.teams.service;
 
 import ma.talabaty.talabaty.domain.stores.model.Store;
 import ma.talabaty.talabaty.domain.stores.repository.StoreRepository;
+import ma.talabaty.talabaty.domain.orders.model.Order;
+import ma.talabaty.talabaty.domain.orders.repository.OrderRepository;
 import ma.talabaty.talabaty.domain.teams.model.StoreTeamMember;
 import ma.talabaty.talabaty.domain.teams.model.StoreTeamRole;
 import ma.talabaty.talabaty.domain.teams.model.TeamInvitationStatus;
@@ -28,13 +30,15 @@ public class TeamService {
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final OrderRepository orderRepository;
 
     public TeamService(StoreTeamMemberRepository teamMemberRepository, StoreRepository storeRepository,
-                      UserRepository userRepository, UserService userService) {
+                      UserRepository userRepository, UserService userService, OrderRepository orderRepository) {
         this.teamMemberRepository = teamMemberRepository;
         this.storeRepository = storeRepository;
         this.userRepository = userRepository;
         this.userService = userService;
+        this.orderRepository = orderRepository;
     }
 
     public StoreTeamMember inviteUser(UUID storeId, UUID userId, StoreTeamRole role, UUID addedByUserId) {
@@ -93,6 +97,21 @@ public class TeamService {
     public void removeMember(UUID memberId) {
         StoreTeamMember member = teamMemberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Team member not found"));
+
+        // When a team member is removed from a store, unassign all orders in that store
+        // that were handled by them, so they no longer appear in the "Handled by" column.
+        if (member.getUser() != null && member.getStore() != null
+                && member.getUser().getId() != null && member.getStore().getId() != null) {
+            java.util.UUID storeId = member.getStore().getId();
+            java.util.UUID userId = member.getUser().getId();
+            java.util.List<Order> assignedOrders = orderRepository.findByStoreIdAndAssignedToUserId(storeId, userId);
+            for (Order order : assignedOrders) {
+                order.setAssignedTo(null);
+            }
+            if (!assignedOrders.isEmpty()) {
+                orderRepository.saveAll(assignedOrders);
+            }
+        }
 
         teamMemberRepository.delete(member);
     }
@@ -278,11 +297,18 @@ public class TeamService {
         if (existingUser.isPresent()) {
             // User exists - check if already a member of this store
             user = existingUser.get();
-            
-            // Check if already a member of this store
+
             Optional<StoreTeamMember> existingMember = teamMemberRepository.findByStoreIdAndUserId(storeId, user.getId());
             if (existingMember.isPresent()) {
-                throw new RuntimeException("User with email " + email + " is already a member of this store");
+                // Idempotent behavior: if the user is already a member of this store,
+                // just return that membership instead of failing. This avoids confusing
+                // errors in the UI such as "already a member" while the user may not
+                // remember adding them.
+                CreateTeamMemberResponse response = new CreateTeamMemberResponse();
+                response.setMember(existingMember.get());
+                response.setUserWasCreated(false);
+                response.setGeneratedPassword(null);
+                return response;
             }
         } else {
             // User doesn't exist - create new user

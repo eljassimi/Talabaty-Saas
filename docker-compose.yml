@@ -8,9 +8,23 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/talabaty
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      WHATSAPP_LOCAL_URL: http://whatsapp-bridge:3100
+    volumes:
+      - app-uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
+      whatsapp-bridge:
+        condition: service_started
+    restart: unless-stopped
+
+  whatsapp-bridge:
+    build: ./whatsapp-bridge
+    ports:
+      - "3100:3100"
+    volumes:
+      - whatsapp-bridge-auth:/app/.wwebjs_auth
+    restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
@@ -19,9 +33,17 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5433:5432"   # host 5433 to avoid conflict with local PostgreSQL on 5432
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+
+volumes:
+  app-uploads:
+  postgres-data:
+  whatsapp-bridge-auth:

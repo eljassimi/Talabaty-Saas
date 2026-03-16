@@ -17,10 +17,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class OzonExpressService {
 
+    // API is on ozonexpress.ma; client portal (PDFs) is on ozoneexpress.ma
     private static final String BASE_URL = "https://api.ozonexpress.ma";
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -447,7 +449,8 @@ public class OzonExpressService {
     }
 
     /**
-     * Ajouter des colis à un Bon de Livraison
+     * Ajouter des colis à un Bon de Livraison.
+     * Sends Ref + Codes[] (one form field "Codes[]" per tracking number), matching PHP array POST behavior.
      */
     public Map<String, Object> addParcelsToDeliveryNote(String customerId, String apiKey, String deliveryNoteRef, List<String> trackingNumbers) {
         String url = BASE_URL + "/customers/" + customerId + "/" + apiKey + "/add-parcel-to-delivery-note";
@@ -457,8 +460,16 @@ public class OzonExpressService {
         
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("Ref", deliveryNoteRef);
-        for (int i = 0; i < trackingNumbers.size(); i++) {
-            body.add("Codes[" + i + "]", trackingNumbers.get(i));
+        // Doc and curl use Codes[0], Codes[1], ... (indexed form)
+        int idx = 0;
+        for (String code : trackingNumbers) {
+            if (code != null && !code.trim().isEmpty()) {
+                body.add("Codes[" + idx + "]", code.trim());
+                idx++;
+            }
+        }
+        if (idx == 0) {
+            throw new RuntimeException("No valid tracking numbers to add to delivery note");
         }
         
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(body, headers);
@@ -491,6 +502,72 @@ public class OzonExpressService {
         } catch (Exception e) {
             throw new RuntimeException("Error saving delivery note in Ozon Express: " + e.getMessage(), e);
         }
+    }
+
+    private static final String CLIENT_BASE = "https://client.ozoneexpress.ma";
+
+    /**
+     * Fetch a delivery note PDF from Ozon client portal. Tries with optional credential query params
+     * in case the portal allows direct access with API credentials.
+     */
+    public byte[] fetchDeliveryNotePdf(String ref, String type, String customerId, String apiKey) {
+        String path;
+        switch (type != null ? type : "standard") {
+            case "tickets":
+                path = "/pdf-delivery-note-tickets";
+                break;
+            case "tickets-4-4":
+                path = "/pdf-delivery-note-tickets-4-4";
+                break;
+            default:
+                path = "/pdf-delivery-note";
+        }
+        String urlWithRef = CLIENT_BASE + path + "?dn-ref=" + ref;
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "Talabaty/1.0");
+            headers.set("Accept", "application/pdf,text/html,*/*");
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            ResponseEntity<byte[]> response = restTemplate.exchange(
+                    urlWithRef,
+                    HttpMethod.GET,
+                    entity,
+                    byte[].class
+            );
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                byte[] body = response.getBody();
+                if (body.length > 0 && !isHtml(body)) {
+                    return body;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        String withCreds = urlWithRef + "&customer_id=" + customerId + "&api_key=" + apiKey;
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "Talabaty/1.0");
+            headers.set("Accept", "application/pdf");
+            ResponseEntity<byte[]> response = restTemplate.exchange(
+                    withCreds,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    byte[].class
+            );
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                byte[] body = response.getBody();
+                if (body.length > 0 && !isHtml(body)) {
+                    return body;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        throw new RuntimeException("PDF non disponible via l’API. Téléchargez-le depuis client.ozoneexpress.ma (connexion requise).");
+    }
+
+    private boolean isHtml(byte[] body) {
+        if (body.length < 100) return false;
+        String start = new String(body, 0, Math.min(200, body.length), StandardCharsets.UTF_8).toLowerCase();
+        return start.contains("<!DOCTYPE") || start.contains("<html");
     }
 
     /**

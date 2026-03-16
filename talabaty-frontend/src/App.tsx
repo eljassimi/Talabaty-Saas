@@ -10,11 +10,14 @@ import Orders from './pages/Orders'
 import OrderDetail from './pages/OrderDetail'
 import ShippingProviders from './pages/ShippingProviders'
 import Integrations from './pages/Integrations'
+import Automations from './pages/Automations'
 import Users from './pages/Users'
 import ChangePassword from './pages/ChangePassword'
 import SelectStore from './pages/SelectStore'
 import Settings from './pages/Settings'
 import Help from './pages/Help'
+import Earnings from './pages/Earnings'
+import PaymentRequests from './pages/PaymentRequests'
 import Layout from './components/Layout'
 import TalabatyLogoSpinner from './components/TalabatyLogoSpinner'
 
@@ -96,7 +99,10 @@ function AppRoutes() {
         <Route path="orders/:id" element={<OrderDetail />} />
         <Route path="shipping" element={<ShippingProviders />} />
         <Route path="integrations" element={<Integrations />} />
+        <Route path="automations" element={<Automations />} />
         <Route path="users" element={<Users />} />
+        <Route path="earnings" element={<Earnings />} />
+        <Route path="payment-requests" element={<PaymentRequests />} />
         <Route path="help" element={<Help />} />
         <Route path="settings" element={<Settings />} />
       </Route>

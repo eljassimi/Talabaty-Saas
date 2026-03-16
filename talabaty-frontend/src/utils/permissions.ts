@@ -17,6 +17,8 @@ export interface Permissions {
   canUpdateOrder: boolean
   canManageShippingProviders: boolean
   canUploadFiles: boolean
+  canAccessIntegrations: boolean
+  canManagePaymentRequests: boolean
 }
 
 export function getPermissions(role: string | undefined): Permissions {
@@ -27,10 +29,12 @@ export function getPermissions(role: string | undefined): Permissions {
       canDeleteStore: false,
       canManageUsers: false,
       canManageTeamMembers: false,
-      canCreateOrder: false,
-      canUpdateOrder: false,
-      canManageShippingProviders: false,
-      canUploadFiles: false,
+    canCreateOrder: false,
+    canUpdateOrder: false,
+    canManageShippingProviders: false,
+    canUploadFiles: false,
+    canAccessIntegrations: false,
+    canManagePaymentRequests: false,
     }
   }
 
@@ -64,6 +68,14 @@ export function getPermissions(role: string | undefined): Permissions {
     canUploadFiles: userRole === UserRole.PLATFORM_ADMIN || 
                     userRole === UserRole.ACCOUNT_OWNER || 
                     userRole === UserRole.MANAGER,
+
+    // Integrations (YouCan, WhatsApp, Excel) - support cannot access
+    canAccessIntegrations: userRole === UserRole.PLATFORM_ADMIN ||
+                            userRole === UserRole.ACCOUNT_OWNER ||
+                            userRole === UserRole.MANAGER,
+
+    // Payment requests (support earnings) - only admin can manage
+    canManagePaymentRequests: userRole === UserRole.PLATFORM_ADMIN || userRole === UserRole.ACCOUNT_OWNER,
   }
 }
 

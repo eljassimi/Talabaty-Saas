@@ -96,5 +96,24 @@ export const shippingService = {
     })
     return response.data
   },
+
+  /** Create a Bon de Livraison (delivery note) from selected orders with Ozon tracking numbers. */
+  async createBonDeLivraison(orderIds: string[]): Promise<BonDeLivraisonResult> {
+    const response = await api.post<BonDeLivraisonResult>(
+      '/shipping/ozon-express/delivery-notes/create-full',
+      { orderIds }
+    )
+    return response.data
+  },
+}
+
+export interface BonDeLivraisonResult {
+  ref: string
+  pdfUrl: string
+  pdfTicketsUrl: string
+  pdfTickets4x4Url: string
+  trackingCount: number
+  /** True when the BL already existed (orders were already in a BL). */
+  existing?: boolean
 }
 

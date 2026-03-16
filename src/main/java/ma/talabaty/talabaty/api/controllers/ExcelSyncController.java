@@ -2,7 +2,10 @@ package ma.talabaty.talabaty.api.controllers;
 
 import ma.talabaty.talabaty.api.dtos.ExcelSyncConfigDto;
 import ma.talabaty.talabaty.core.security.AuthenticationHelper;
+import ma.talabaty.talabaty.core.security.PermissionChecker;
 import ma.talabaty.talabaty.domain.orders.sync.model.ExcelSyncConfig;
+import ma.talabaty.talabaty.domain.users.model.User;
+import ma.talabaty.talabaty.domain.users.repository.UserRepository;
 import ma.talabaty.talabaty.domain.orders.sync.repository.ExcelSyncConfigRepository;
 import ma.talabaty.talabaty.domain.orders.sync.service.GoogleSheetsSyncService;
 import ma.talabaty.talabaty.domain.stores.repository.StoreRepository;
@@ -17,25 +20,41 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/excel-sync")
-@CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001", "http://localhost:3002", "http://127.0.0.1:3002"}, maxAge = 3600)
+@CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:3001", "http://127.0.0.1:3001", "http://localhost:3002", "http://127.0.0.1:3002"}, maxAge = 3600)
 public class ExcelSyncController {
 
     private final ExcelSyncConfigRepository syncConfigRepository;
     private final GoogleSheetsSyncService syncService;
     private final StoreRepository storeRepository;
+    private final PermissionChecker permissionChecker;
+    private final UserRepository userRepository;
 
     public ExcelSyncController(ExcelSyncConfigRepository syncConfigRepository,
                               GoogleSheetsSyncService syncService,
-                              StoreRepository storeRepository) {
+                              StoreRepository storeRepository,
+                              PermissionChecker permissionChecker,
+                              UserRepository userRepository) {
         this.syncConfigRepository = syncConfigRepository;
         this.syncService = syncService;
         this.storeRepository = storeRepository;
+        this.permissionChecker = permissionChecker;
+        this.userRepository = userRepository;
+    }
+
+    private void requireIntegrationsAccess(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) return;
+        UUID userId = AuthenticationHelper.getUserIdFromAuth(authentication);
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null && !permissionChecker.canAccessIntegrations(user.getRole())) {
+            throw new org.springframework.security.access.AccessDeniedException("Support team cannot manage integrations.");
+        }
     }
 
     @PostMapping
     public ResponseEntity<ExcelSyncConfigDto> createSyncConfig(
             @RequestBody CreateSyncConfigRequest request,
             Authentication authentication) {
+        requireIntegrationsAccess(authentication);
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
         
         // Verify store belongs to account
@@ -61,6 +80,7 @@ public class ExcelSyncController {
     public ResponseEntity<List<ExcelSyncConfigDto>> getSyncConfigs(
             @PathVariable String storeId,
             Authentication authentication) {
+        requireIntegrationsAccess(authentication);
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
         UUID storeUuid = UUID.fromString(storeId);
         
@@ -80,6 +100,7 @@ public class ExcelSyncController {
             @PathVariable String id,
             @RequestBody UpdateSyncConfigRequest request,
             Authentication authentication) {
+        requireIntegrationsAccess(authentication);
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
         UUID configId = UUID.fromString(id);
         
@@ -123,6 +144,7 @@ public class ExcelSyncController {
     public ResponseEntity<Void> deleteSyncConfig(
             @PathVariable String id,
             Authentication authentication) {
+        requireIntegrationsAccess(authentication);
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
         UUID configId = UUID.fromString(id);
         
@@ -141,6 +163,7 @@ public class ExcelSyncController {
     public ResponseEntity<SyncResultDto> triggerSync(
             @PathVariable String id,
             Authentication authentication) {
+        requireIntegrationsAccess(authentication);
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
         UUID configId = UUID.fromString(id);
         
@@ -163,6 +186,7 @@ public class ExcelSyncController {
 
     @PostMapping("/sync-all")
     public ResponseEntity<String> syncAll(Authentication authentication) {
+        requireIntegrationsAccess(authentication);
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
         // Only allow platform admins or account owners to sync all
         // For now, allow all authenticated users

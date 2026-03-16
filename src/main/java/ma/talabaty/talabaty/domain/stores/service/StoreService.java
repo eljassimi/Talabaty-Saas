@@ -3,6 +3,7 @@ package ma.talabaty.talabaty.domain.stores.service;
 import ma.talabaty.talabaty.domain.accounts.model.Account;
 import ma.talabaty.talabaty.domain.accounts.repository.AccountRepository;
 import ma.talabaty.talabaty.domain.stores.model.Store;
+import ma.talabaty.talabaty.domain.stores.model.StoreSettings;
 import ma.talabaty.talabaty.domain.stores.model.StoreStatus;
 import ma.talabaty.talabaty.domain.stores.repository.StoreRepository;
 import ma.talabaty.talabaty.domain.users.model.User;
@@ -11,6 +12,7 @@ import ma.talabaty.talabaty.domain.users.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -138,6 +140,49 @@ public class StoreService {
 
     public Store save(Store store) {
         return storeRepository.save(store);
+    }
+
+    /**
+     * Returns store settings, creating default settings if none exist.
+     */
+    public StoreSettings getOrCreateSettings(Store store) {
+        StoreSettings settings = store.getSettings();
+        if (settings == null) {
+            settings = new StoreSettings();
+            settings.setStore(store);
+            settings.setCurrency(store.getTimezone() != null && store.getTimezone().contains("MA") ? "MAD" : "USD");
+            settings.setLocale("en-US");
+            store.setSettings(settings);
+            storeRepository.save(store);
+        }
+        return settings;
+    }
+
+    public void updateWhatsAppAutomation(UUID storeId, Boolean enabled, String templateConfirmed, String templateDelivered) {
+        Store store = storeRepository.findById(storeId).orElseThrow(() -> new RuntimeException("Store not found"));
+        StoreSettings settings = getOrCreateSettings(store);
+        if (enabled != null) {
+            settings.setWhatsappAutomationEnabled(enabled);
+        }
+        if (templateConfirmed != null) {
+            settings.setWhatsappTemplateConfirmed(templateConfirmed.isBlank() ? null : templateConfirmed);
+        }
+        if (templateDelivered != null) {
+            settings.setWhatsappTemplateDelivered(templateDelivered.isBlank() ? null : templateDelivered);
+        }
+        storeRepository.save(store);
+    }
+
+    public void updateSupportRevenuePrices(UUID storeId, BigDecimal priceConfirmedMad, BigDecimal priceDeliveredMad) {
+        Store store = storeRepository.findById(storeId).orElseThrow(() -> new RuntimeException("Store not found"));
+        StoreSettings settings = getOrCreateSettings(store);
+        if (priceConfirmedMad != null) {
+            settings.setPricePerOrderConfirmedMad(priceConfirmedMad);
+        }
+        if (priceDeliveredMad != null) {
+            settings.setPricePerOrderDeliveredMad(priceDeliveredMad);
+        }
+        storeRepository.save(store);
     }
 }
 

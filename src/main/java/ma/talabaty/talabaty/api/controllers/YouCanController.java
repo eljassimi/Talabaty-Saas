@@ -1,6 +1,9 @@
 package ma.talabaty.talabaty.api.controllers;
 
 import ma.talabaty.talabaty.core.security.AuthenticationHelper;
+import ma.talabaty.talabaty.core.security.PermissionChecker;
+import ma.talabaty.talabaty.domain.users.model.User;
+import ma.talabaty.talabaty.domain.users.repository.UserRepository;
 import ma.talabaty.talabaty.domain.youcan.model.YouCanStore;
 import ma.talabaty.talabaty.domain.youcan.service.YouCanOAuthService;
 import ma.talabaty.talabaty.domain.youcan.service.YouCanOrderSyncService;
@@ -24,6 +27,8 @@ public class YouCanController {
     private final YouCanOAuthService youCanOAuthService;
     private final YouCanOrderSyncService youCanOrderSyncService;
     private final YouCanStoreRepository youCanStoreRepository;
+    private final PermissionChecker permissionChecker;
+    private final UserRepository userRepository;
 
     @Value("${app.frontend.url:http://localhost:8080}")
     private String frontendBaseUrl;
@@ -31,10 +36,23 @@ public class YouCanController {
     public YouCanController(
             YouCanOAuthService youCanOAuthService,
             YouCanOrderSyncService youCanOrderSyncService,
-            YouCanStoreRepository youCanStoreRepository) {
+            YouCanStoreRepository youCanStoreRepository,
+            PermissionChecker permissionChecker,
+            UserRepository userRepository) {
         this.youCanOAuthService = youCanOAuthService;
         this.youCanOrderSyncService = youCanOrderSyncService;
         this.youCanStoreRepository = youCanStoreRepository;
+        this.permissionChecker = permissionChecker;
+        this.userRepository = userRepository;
+    }
+
+    private void requireIntegrationsAccess(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) return;
+        UUID userId = AuthenticationHelper.getUserIdFromAuth(authentication);
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null && !permissionChecker.canAccessIntegrations(user.getRole())) {
+            throw new org.springframework.security.access.AccessDeniedException("Support team cannot manage integrations.");
+        }
     }
 
     /**
@@ -44,6 +62,7 @@ public class YouCanController {
     public ResponseEntity<Map<String, Object>> initiateConnection(
             @PathVariable String storeId,
             Authentication authentication) {
+        requireIntegrationsAccess(authentication);
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
         UUID storeUuid;
         
@@ -173,6 +192,7 @@ public class YouCanController {
      */
     @GetMapping("/stores")
     public ResponseEntity<List<Map<String, Object>>> listConnectedStores(Authentication authentication) {
+        requireIntegrationsAccess(authentication);
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
         
         List<YouCanStore> youCanStores = youCanStoreRepository.findActiveByAccountId(accountId);
@@ -203,6 +223,7 @@ public class YouCanController {
     public ResponseEntity<Map<String, Object>> syncOrders(
             @PathVariable String youcanStoreId,
             Authentication authentication) {
+        requireIntegrationsAccess(authentication);
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
         UUID youcanStoreUuid;
         
@@ -244,6 +265,7 @@ public class YouCanController {
     public ResponseEntity<Map<String, Object>> disconnectStore(
             @PathVariable String youcanStoreId,
             Authentication authentication) {
+        requireIntegrationsAccess(authentication);
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
         UUID youcanStoreUuid;
         

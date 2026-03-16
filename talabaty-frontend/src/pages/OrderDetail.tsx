@@ -341,7 +341,7 @@ export default function OrderDetail() {
                     </label>
                     <div className="flex items-center space-x-3 bg-gray-50 px-4 py-3 rounded-lg border border-gray-200">
                       <img 
-                        src="https://ozonexpress.ma/wp/wp-content/uploads/2025/07/Untitled-design-38.png"
+                        src="https://ozoneexpress.ma/wp/wp-content/uploads/2025/07/Untitled-design-38.png"
                         alt="Ozon Express"
                         className="h-8 w-8 object-contain"
                         onError={(e) => {

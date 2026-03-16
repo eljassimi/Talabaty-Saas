@@ -4,7 +4,8 @@ public enum OrderSource {
     EXCEL_UPLOAD,
     API,
     WEBHOOK,
-    YOUCAN
+    YOUCAN,
+    MANUAL
 }
 
 

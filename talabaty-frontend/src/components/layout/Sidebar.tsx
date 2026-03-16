@@ -5,13 +5,18 @@ import {
   Store,
   Plug2,
   Users,
+  MessageCircle,
   HelpCircle,
   Settings,
   ChevronLeft,
+  Banknote,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react'
 import { useStoreColor } from '../../hooks/useStoreColor'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useAuth } from '../../contexts/AuthContext'
+import { getPermissions } from '../../utils/permissions'
 
 export interface NavItem {
   name: string
@@ -20,12 +25,15 @@ export interface NavItem {
   badge?: string | number
 }
 
-const defaultNavItems: NavItem[] = [
+const allNavItems: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Orders', href: '/orders', icon: Package },
   { name: 'Stores', href: '/stores', icon: Store },
   { name: 'Integrations', href: '/integrations', icon: Plug2 },
+  { name: 'Automations', href: '/automations', icon: MessageCircle },
   { name: 'Team', href: '/users', icon: Users },
+  { name: 'My earnings', href: '/earnings', icon: Wallet },
+  { name: 'Payment requests', href: '/payment-requests', icon: Banknote },
 ]
 
 interface SidebarProps {
@@ -34,8 +42,32 @@ interface SidebarProps {
   navItems?: NavItem[]
 }
 
-export default function Sidebar({ open, onClose, navItems = defaultNavItems }: SidebarProps) {
+function getNavItemsForRole(role: string | undefined): NavItem[] {
+  const permissions = getPermissions(role)
+  const items: NavItem[] = [
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Orders', href: '/orders', icon: Package },
+    { name: 'Stores', href: '/stores', icon: Store },
+  ]
+  if (permissions.canAccessIntegrations) {
+    items.push({ name: 'Integrations', href: '/integrations', icon: Plug2 })
+    items.push({ name: 'Automations', href: '/automations', icon: MessageCircle })
+  }
+  items.push({ name: 'Team', href: '/users', icon: Users })
+  if (role === 'SUPPORT') {
+    items.push({ name: 'My earnings', href: '/earnings', icon: Wallet })
+  }
+  if (permissions.canManagePaymentRequests) {
+    items.push({ name: 'Payment requests', href: '/payment-requests', icon: Banknote })
+  }
+  return items
+}
+
+export default function Sidebar({ open, onClose, navItems: navItemsProp }: SidebarProps) {
   const location = useLocation()
+  const { user } = useAuth()
+  const themeItems = getNavItemsForRole(user?.role)
+  const navItems = navItemsProp ?? themeItems
   const { theme } = useTheme()
   const { storeColor, storeLogo, storeName } = useStoreColor()
   const isDark = theme === 'dark'

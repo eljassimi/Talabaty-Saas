@@ -32,5 +32,21 @@ public interface OrderRepository extends JpaRepository<Order, java.util.UUID> {
     // Query to force load totalAmount field explicitly
     @Query("SELECT o FROM Order o WHERE o.id = :id")
     Optional<Order> findByIdWithTotalAmount(@Param("id") UUID id);
+
+    /** Load orders by IDs with store and account eagerly to avoid LazyInitializationException. */
+    @Query("SELECT o FROM Order o JOIN FETCH o.store s JOIN FETCH s.account WHERE o.id IN :ids")
+    List<Order> findAllByIdWithStoreAndAccount(@Param("ids") List<UUID> ids);
+
+    /** Distinct customer phone numbers for a store (for WhatsApp broadcast). */
+    @Query("SELECT DISTINCT o.customerPhone FROM Order o WHERE o.store.id = :storeId AND o.customerPhone IS NOT NULL AND LENGTH(TRIM(o.customerPhone)) > 0")
+    List<String> findDistinctCustomerPhonesByStoreId(@Param("storeId") UUID storeId);
+
+    /** Unassigned orders for a store (assigned_to is null), ordered by createdAt ascending for fair distribution. */
+    @Query("SELECT o FROM Order o WHERE o.store.id = :storeId AND o.assignedTo IS NULL ORDER BY o.createdAt ASC")
+    List<Order> findUnassignedByStoreIdOrderByCreatedAtAsc(@Param("storeId") UUID storeId);
+
+    /** Orders in a store currently assigned to a specific user (for team member removal / cleanup). */
+    @Query("SELECT o FROM Order o WHERE o.store.id = :storeId AND o.assignedTo.id = :userId")
+    List<Order> findByStoreIdAndAssignedToUserId(@Param("storeId") UUID storeId, @Param("userId") UUID userId);
 }
 

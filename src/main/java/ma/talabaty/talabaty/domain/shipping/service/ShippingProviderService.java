@@ -85,22 +85,18 @@ public class ShippingProviderService {
     }
 
     /**
-     * Get active provider for a store. First tries store-level, then falls back to account-level.
+     * Get active provider for a store.
+     * This is strictly per-store: if a store does not have its own provider,
+     * no provider is returned. We do NOT fall back to account-level credentials,
+     * so each store must configure its own unique delivery provider.
      */
     public Optional<ShippingProvider> getActiveProviderForStore(UUID storeId, ProviderType providerType) {
-        // First try store-level provider
         List<ShippingProvider> storeProviders = providerRepository.findByStoreIdAndProviderType(storeId, providerType);
         if (!storeProviders.isEmpty()) {
             // Return the most recently created one if multiple exist
             return Optional.of(storeProviders.get(0));
         }
-        
-        // Fallback to account-level provider
-        Store store = storeRepository.findById(storeId)
-                .orElseThrow(() -> new RuntimeException("Store not found"));
-        List<ShippingProvider> accountProviders = providerRepository.findByAccountIdAndProviderType(store.getAccount().getId(), providerType);
-        // Return the most recently created one if multiple exist
-        return accountProviders.isEmpty() ? Optional.empty() : Optional.of(accountProviders.get(0));
+        return Optional.empty();
     }
 
     public ShippingProvider updateProvider(UUID providerId, String customerId, String apiKey, String displayName, Boolean active) {

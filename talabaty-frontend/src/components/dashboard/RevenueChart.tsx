@@ -18,6 +18,7 @@ interface RevenueChartProps {
   orders: Order[]
   brandColor: string
   days?: number
+  isDark?: boolean
 }
 
 function groupRevenueByDay(
@@ -55,7 +56,12 @@ function groupRevenueByDay(
   }
 }
 
-export default function RevenueChart({ orders, brandColor, days = 14 }: RevenueChartProps) {
+const TICK_COLOR_LIGHT = '#6B7280'
+const TICK_COLOR_DARK = '#9CA3AF'
+const GRID_COLOR_LIGHT = '#E5E7EB'
+const GRID_COLOR_DARK = 'rgba(255, 255, 255, 0.12)'
+
+export default function RevenueChart({ orders, brandColor, days = 14, isDark = false }: RevenueChartProps) {
   const { labels, values } = useMemo(
     () => groupRevenueByDay(orders, days),
     [orders, days]
@@ -84,10 +90,10 @@ export default function RevenueChart({ orders, brandColor, days = 14 }: RevenueC
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#fff',
-          titleColor: '#111827',
-          bodyColor: '#6B7280',
-          borderColor: '#E6E8EC',
+          backgroundColor: isDark ? '#2A2D35' : '#fff',
+          titleColor: isDark ? '#F3F4F6' : '#111827',
+          bodyColor: isDark ? '#D1D5DB' : '#6B7280',
+          borderColor: isDark ? '#3d4048' : '#E6E8EC',
           borderWidth: 1,
           callbacks: {
             label: (ctx) => {
@@ -100,21 +106,21 @@ export default function RevenueChart({ orders, brandColor, days = 14 }: RevenueC
       scales: {
         x: {
           grid: { display: false },
-          ticks: { color: '#6B7280', font: { size: 11 } },
+          ticks: { color: isDark ? TICK_COLOR_DARK : TICK_COLOR_LIGHT, font: { size: 11 } },
         },
         y: {
           beginAtZero: true,
-          grid: { color: '#F6F8FB' },
-          ticks: { color: '#6B7280', font: { size: 11 } },
+          grid: { color: isDark ? GRID_COLOR_DARK : GRID_COLOR_LIGHT },
+          ticks: { color: isDark ? TICK_COLOR_DARK : TICK_COLOR_LIGHT, font: { size: 11 } },
         },
       },
     }),
-    [orders]
+    [orders, isDark]
   )
 
   if (labels.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[200px] text-[#6B7280] text-sm">
+      <div className="flex items-center justify-center h-[200px] text-gray-500 dark:text-gray-400 text-sm">
         No revenue data for this period
       </div>
     )

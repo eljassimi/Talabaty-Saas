@@ -5,3 +5,9 @@ databaseChangeLog:
       file: db/changelog/0016-add-user-extra-columns.yaml
   - include:
       file: db/changelog/0017-schema-sync-with-entities.yaml
+  - include:
+      file: db/changelog/0018-add-delivery-note-ref.yaml
+  - include:
+      file: db/changelog/0019-whatsapp-automation.yaml
+  - include:
+      file: db/changelog/0020-support-revenue-and-prices.yaml

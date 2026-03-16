@@ -14,6 +14,7 @@ ChartJS.register(ArcElement, Tooltip, Legend)
 interface OrdersByCityChartProps {
   orders: Order[]
   brandColor: string
+  isDark?: boolean
 }
 
 function getCityCounts(orders: Order[]): { label: string; count: number }[] {
@@ -28,26 +29,32 @@ function getCityCounts(orders: Order[]): { label: string; count: number }[] {
     .slice(0, 8)
 }
 
-// Generate shades from brand color for multiple segments
-function colorShades(hex: string, count: number): string[] {
+// Generate shades from brand color for multiple segments; brighter in dark mode for visibility on dark bg
+function colorShades(hex: string, count: number, isDark?: boolean): string[] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
   if (!result) return [hex]
   let r = parseInt(result[1], 16)
   let g = parseInt(result[2], 16)
   let b = parseInt(result[3], 16)
   const out: string[] = []
+  const minFactor = isDark ? 0.7 : 0.4
   for (let i = 0; i < count; i++) {
-    const factor = 1 - (i * 0.12)
+    const factor = 1 - (i * (isDark ? 0.06 : 0.12))
+    const f = Math.max(minFactor, factor)
+    const clamp = (x: number) => Math.min(255, Math.max(0, Math.round(x)))
     out.push(
-      `rgb(${Math.round(r * factor)}, ${Math.round(g * factor)}, ${Math.round(b * factor)})`
+      `rgb(${clamp(r * f)}, ${clamp(g * f)}, ${clamp(b * f)})`
     )
   }
   return out
 }
 
-export default function OrdersByCityChart({ orders, brandColor }: OrdersByCityChartProps) {
+export default function OrdersByCityChart({ orders, brandColor, isDark = false }: OrdersByCityChartProps) {
   const cityData = useMemo(() => getCityCounts(orders), [orders])
-  const colors = useMemo(() => colorShades(brandColor, Math.max(cityData.length, 1)), [brandColor, cityData.length])
+  const colors = useMemo(
+    () => colorShades(brandColor, Math.max(cityData.length, 1), isDark),
+    [brandColor, cityData.length, isDark]
+  )
 
   const data = useMemo(
     () => ({
@@ -63,6 +70,7 @@ export default function OrdersByCityChart({ orders, brandColor }: OrdersByCityCh
     [cityData, colors]
   )
 
+  const legendColor = isDark ? '#D1D5DB' : '#6B7280'
   const options: ChartOptions<'doughnut'> = useMemo(
     () => ({
       responsive: true,
@@ -71,23 +79,24 @@ export default function OrdersByCityChart({ orders, brandColor }: OrdersByCityCh
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: '#6B7280', font: { size: 11 }, padding: 12 },
+          labels: { color: legendColor, font: { size: 11 }, padding: 12 },
+          usePointStyle: true,
         },
         tooltip: {
-          backgroundColor: '#fff',
-          titleColor: '#111827',
-          bodyColor: '#6B7280',
-          borderColor: '#E6E8EC',
+          backgroundColor: isDark ? '#2A2D35' : '#fff',
+          titleColor: isDark ? '#F3F4F6' : '#111827',
+          bodyColor: isDark ? '#D1D5DB' : '#6B7280',
+          borderColor: isDark ? '#3d4048' : '#E6E8EC',
           borderWidth: 1,
         },
       },
     }),
-    []
+    [isDark, legendColor]
   )
 
   if (cityData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[200px] text-[#6B7280] text-sm">
+      <div className="flex items-center justify-center h-[200px] text-gray-500 dark:text-gray-400 text-sm">
         No data
       </div>
     )

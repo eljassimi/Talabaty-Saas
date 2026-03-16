@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { BRAND_COLORS } from '../constants/brand'
 import TalabatyLogoSvg from '../images/talabaty-logo.svg'
 import GridDistortion from '../components/GridDistortion'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Sun, Moon } from 'lucide-react'
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,7 @@ export default function Signup() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { signup } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -65,7 +67,7 @@ export default function Signup() {
   `)}`
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-white dark:bg-[#222328]">
       {/* Left Side - Gradient with Distortion */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.secondary} 50%, ${BRAND_COLORS.primary}dd 100%)` }}>
         <div style={{ width: '100%', height: '100%', position: 'relative', cursor: 'none' }}>
@@ -97,7 +99,15 @@ export default function Signup() {
       </div>
 
       {/* Right Side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-gray-50 overflow-y-auto">
+      <div className="relative flex-1 flex items-center justify-center p-8 bg-white dark:bg-[#222328] overflow-y-auto">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="absolute top-6 right-6 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#2A2D35] transition-colors"
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </button>
         <div className="w-full max-w-md my-8">
           {/* Logo */}
           <div className="mb-8">
@@ -111,8 +121,8 @@ export default function Signup() {
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create an account</h1>
-          <p className="text-gray-600 mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Create an account</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
             Access your tasks, notes, and projects anytime, anywhere - and keep everything flowing in one place.
           </p>
 
@@ -127,7 +137,7 @@ export default function Signup() {
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                   First Name
                 </label>
                 <input
@@ -137,7 +147,7 @@ export default function Signup() {
                   required
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#2A2D35] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                   style={{
                     '--tw-ring-color': BRAND_COLORS.primary,
                   } as React.CSSProperties & { '--tw-ring-color': string }}
@@ -152,7 +162,7 @@ export default function Signup() {
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                   Last Name
                 </label>
                 <input
@@ -162,7 +172,7 @@ export default function Signup() {
                   required
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#2A2D35] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                   style={{
                     '--tw-ring-color': BRAND_COLORS.primary,
                   } as React.CSSProperties & { '--tw-ring-color': string }}
@@ -180,7 +190,7 @@ export default function Signup() {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Your email
               </label>
               <input
@@ -191,7 +201,7 @@ export default function Signup() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#2A2D35] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                 style={{
                   '--tw-ring-color': BRAND_COLORS.primary,
                 } as React.CSSProperties & { '--tw-ring-color': string }}
@@ -209,7 +219,7 @@ export default function Signup() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -221,7 +231,7 @@ export default function Signup() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#2A2D35] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                   style={{
                     '--tw-ring-color': BRAND_COLORS.primary,
                   } as React.CSSProperties & { '--tw-ring-color': string }}
@@ -238,7 +248,7 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -247,7 +257,7 @@ export default function Signup() {
 
             {/* Phone Number */}
             <div>
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Phone Number
               </label>
               <input
@@ -257,7 +267,7 @@ export default function Signup() {
                 required
                 value={formData.phoneNumber}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#2A2D35] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                 style={{
                   '--tw-ring-color': BRAND_COLORS.primary,
                 } as React.CSSProperties & { '--tw-ring-color': string }}
@@ -275,7 +285,7 @@ export default function Signup() {
 
             {/* Account Name */}
             <div>
-              <label htmlFor="accountName" className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="accountName" className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Account Name
               </label>
               <input
@@ -285,7 +295,7 @@ export default function Signup() {
                 required
                 value={formData.accountName}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#2A2D35] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                 style={{
                   '--tw-ring-color': BRAND_COLORS.primary,
                 } as React.CSSProperties & { '--tw-ring-color': string }}
@@ -321,7 +331,7 @@ export default function Signup() {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">or continue with</span>
+              <span className="px-2 bg-white dark:bg-[#222328] text-gray-500 dark:text-gray-400">or continue with</span>
             </div>
           </div>
 
@@ -330,7 +340,7 @@ export default function Signup() {
             <button
               type="button"
               onClick={handleGoogleSignUp}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors font-medium text-gray-700"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-[#2A2D35] hover:bg-gray-50 dark:hover:bg-[#3d4048] transition-colors font-medium text-gray-700 dark:text-gray-200"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -344,7 +354,7 @@ export default function Signup() {
 
           {/* Sign In Link */}
           <div className="text-center text-sm">
-            <span className="text-gray-600">Already have an account? </span>
+            <span className="text-gray-600 dark:text-gray-400">Already have an account? </span>
             <Link 
               to="/login" 
               className="font-semibold transition-colors"

@@ -27,22 +27,26 @@ public class YouCanOAuthService {
     private final StoreRepository storeRepository;
     private final RestTemplate restTemplate;
 
-    @Value("${youcan.oauth.client-id}")
+    private static final String DEFAULT_CLIENT_ID = "2070";
+    private static final String DEFAULT_CLIENT_SECRET = "Pt0aKugGGgp6BdBBKW1Y0i2rjRyZPTgU3vHeLAyX";
+    private static final String DEFAULT_REDIRECT_URI = "http://localhost:8080/api/youcan/oauth/callback";
+
+    @Value("${youcan.oauth.client-id:2070}")
     private String clientId;
 
-    @Value("${youcan.oauth.client-secret}")
+    @Value("${youcan.oauth.client-secret:Pt0aKugGGgp6BdBBKW1Y0i2rjRyZPTgU3vHeLAyX}")
     private String clientSecret;
 
-    @Value("${youcan.oauth.redirect-uri}")
+    @Value("${youcan.oauth.redirect-uri:http://localhost:8080/api/youcan/oauth/callback}")
     private String redirectUri;
 
-    @Value("${youcan.oauth.authorize-url:https://youcan.shop/oauth/authorize}")
+    @Value("${youcan.oauth.authorize-url:https://seller-area.youcan.shop/admin/oauth/authorize}")
     private String authorizeUrl;
 
-    @Value("${youcan.oauth.token-url:https://youcan.shop/oauth/token}")
+    @Value("${youcan.oauth.token-url:https://api.youcan.shop/oauth/token}")
     private String tokenUrl;
 
-    @Value("${youcan.oauth.scopes:orders:read orders:write}")
+    @Value("${youcan.oauth.scopes:*}")
     private String scopes;
 
     public YouCanOAuthService(
@@ -57,19 +61,22 @@ public class YouCanOAuthService {
     }
 
     /**
-     * Generate the OAuth authorization URL for a merchant to connect their YouCan store
+     * Generate the OAuth authorization URL for a merchant to connect their YouCan store.
+     * Uses fallbacks so client_id and redirect_uri are never empty (e.g. if env vars override to blank).
      */
     public String getAuthorizationUrl(UUID accountId, UUID storeId) {
-        String state = accountId.toString() + ":" + storeId.toString(); // Encode account and store IDs in state
-        
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(authorizeUrl)
-                .queryParam("client_id", clientId)
-                .queryParam("redirect_uri", redirectUri)
+        String effectiveClientId = (clientId != null && !clientId.isBlank()) ? clientId.trim() : DEFAULT_CLIENT_ID;
+        String effectiveRedirectUri = (redirectUri != null && !redirectUri.isBlank()) ? redirectUri.trim().replaceAll("/$", "") : DEFAULT_REDIRECT_URI;
+        String effectiveAuthorizeUrl = (authorizeUrl != null && !authorizeUrl.isBlank()) ? authorizeUrl.trim() : "https://seller-area.youcan.shop/admin/oauth/authorize";
+
+        String state = accountId.toString() + ":" + storeId.toString();
+
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(effectiveAuthorizeUrl)
+                .queryParam("client_id", effectiveClientId)
+                .queryParam("redirect_uri", effectiveRedirectUri)
                 .queryParam("response_type", "code")
                 .queryParam("state", state);
-        
-        // YouCan uses scope[] array format (as per documentation: scope[]=*)
-        // Only add scope parameter if scopes are configured and not empty
+
         if (scopes != null && !scopes.trim().isEmpty()) {
             String[] scopeArray = scopes.trim().split("\\s+");
             for (String scope : scopeArray) {
@@ -78,7 +85,7 @@ public class YouCanOAuthService {
                 }
             }
         }
-        
+
         return uriBuilder.build().toUriString();
     }
 
@@ -248,24 +255,30 @@ public class YouCanOAuthService {
     }
 
     /**
-     * Exchange authorization code for access token
+     * Exchange authorization code for access token.
+     * Uses same effective client/redirect as authorize URL so token exchange always matches.
      */
     private Map<String, Object> exchangeCodeForToken(String code) {
+        String effectiveClientId = (clientId != null && !clientId.isBlank()) ? clientId.trim() : DEFAULT_CLIENT_ID;
+        String effectiveClientSecret = (clientSecret != null && !clientSecret.isBlank()) ? clientSecret.trim() : DEFAULT_CLIENT_SECRET;
+        String effectiveRedirectUri = (redirectUri != null && !redirectUri.isBlank()) ? redirectUri.trim().replaceAll("/$", "") : DEFAULT_REDIRECT_URI;
+        String effectiveTokenUrl = (tokenUrl != null && !tokenUrl.isBlank()) ? tokenUrl.trim() : "https://api.youcan.shop/oauth/token";
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("client_id", clientId);
-        body.add("client_secret", clientSecret);
-        body.add("code", code);
-        body.add("redirect_uri", redirectUri);
         body.add("grant_type", "authorization_code");
+        body.add("client_id", effectiveClientId);
+        body.add("client_secret", effectiveClientSecret);
+        body.add("redirect_uri", effectiveRedirectUri);
+        body.add("code", code);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
         try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
-            
+            ResponseEntity<Map> response = restTemplate.postForEntity(effectiveTokenUrl, request, Map.class);
+
             if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
                 System.err.println("Token exchange failed. Status: " + response.getStatusCode());
                 throw new RuntimeException("Failed to exchange authorization code for token. Status: " + response.getStatusCode());
@@ -273,6 +286,10 @@ public class YouCanOAuthService {
 
             System.out.println("Token exchange successful");
             return response.getBody();
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            String responseBody = e.getResponseBodyAsString();
+            System.err.println("Token exchange HTTP error: " + e.getStatusCode() + " - " + responseBody);
+            throw new RuntimeException("YouCan token exchange failed: " + (responseBody != null && !responseBody.isEmpty() ? responseBody : e.getMessage()), e);
         } catch (Exception e) {
             System.err.println("Exception during token exchange: " + e.getMessage());
             e.printStackTrace();
@@ -324,25 +341,29 @@ public class YouCanOAuthService {
     }
 
     /**
-     * Refresh access token using refresh token
+     * Refresh access token using refresh token.
      */
     public YouCanStore refreshToken(YouCanStore youCanStore) {
         if (youCanStore.getRefreshToken() == null) {
             throw new RuntimeException("No refresh token available");
         }
 
+        String effectiveClientId = (clientId != null && !clientId.isBlank()) ? clientId.trim() : DEFAULT_CLIENT_ID;
+        String effectiveClientSecret = (clientSecret != null && !clientSecret.isBlank()) ? clientSecret.trim() : DEFAULT_CLIENT_SECRET;
+        String effectiveTokenUrl = (tokenUrl != null && !tokenUrl.isBlank()) ? tokenUrl.trim() : "https://api.youcan.shop/oauth/token";
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("client_id", clientId);
-        body.add("client_secret", clientSecret);
-        body.add("refresh_token", youCanStore.getRefreshToken());
         body.add("grant_type", "refresh_token");
+        body.add("client_id", effectiveClientId);
+        body.add("client_secret", effectiveClientSecret);
+        body.add("refresh_token", youCanStore.getRefreshToken());
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+        ResponseEntity<Map> response = restTemplate.postForEntity(effectiveTokenUrl, request, Map.class);
         
         if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
             throw new RuntimeException("Failed to refresh access token");

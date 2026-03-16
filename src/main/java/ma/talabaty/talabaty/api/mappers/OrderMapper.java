@@ -65,9 +65,10 @@ public class OrderMapper {
             dto.setAssignedToName(order.getAssignedTo().getFirstName() + " " + order.getAssignedTo().getLastName());
         }
         
-        // Map tracking number
+        // Map tracking number and delivery note ref
         dto.setOzonTrackingNumber(order.getOzonTrackingNumber());
-        
+        dto.setDeliveryNoteRef(order.getDeliveryNoteRef());
+
         dto.setCreatedAt(order.getCreatedAt());
         dto.setUpdatedAt(order.getUpdatedAt());
         return dto;

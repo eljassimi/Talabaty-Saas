@@ -25,6 +25,7 @@ public class OrderDto {
     private String assignedToUserId;
     private String assignedToName;
     private String ozonTrackingNumber;
+    private String deliveryNoteRef;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 
@@ -186,6 +187,14 @@ public class OrderDto {
 
     public void setOzonTrackingNumber(String ozonTrackingNumber) {
         this.ozonTrackingNumber = ozonTrackingNumber;
+    }
+
+    public String getDeliveryNoteRef() {
+        return deliveryNoteRef;
+    }
+
+    public void setDeliveryNoteRef(String deliveryNoteRef) {
+        this.deliveryNoteRef = deliveryNoteRef;
     }
 }
 

@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0020-support-revenue-prices
+      author: assistant
+      changes:
+        - sql:
+            splitStatements: true
+            sql: |
+              ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS price_per_order_confirmed_mad DECIMAL(10,2) DEFAULT 0;
+              ALTER TABLE store_settings ADD COLUMN IF NOT EXISTS price_per_order_delivered_mad DECIMAL(10,2) DEFAULT 0;
+  - changeSet:
+      id: 0020-support-revenue-entries-table
+      author: assistant
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE TABLE IF NOT EXISTS support_revenue_entries (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id),
+                store_id UUID NOT NULL REFERENCES stores(id),
+                order_id UUID NOT NULL REFERENCES orders(id),
+                status_credited VARCHAR(32) NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+  - changeSet:
+      id: 0020-support-payment-requests-table
+      author: assistant
+      changes:
+        - sql:
+            splitStatements: false
+            sql: |
+              CREATE TABLE IF NOT EXISTS support_payment_requests (
+                id UUID PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES users(id),
+                store_id UUID NOT NULL REFERENCES stores(id),
+                amount_requested DECIMAL(10,2) NOT NULL,
+                status VARCHAR(32) NOT NULL,
+                requested_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                processed_at TIMESTAMP WITH TIME ZONE,
+                processed_by_user_id UUID REFERENCES users(id),
+                note TEXT
+              );

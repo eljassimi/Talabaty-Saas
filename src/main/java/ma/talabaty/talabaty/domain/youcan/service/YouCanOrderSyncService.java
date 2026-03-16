@@ -170,28 +170,21 @@ public class YouCanOrderSyncService {
 
         if (existingOrder != null) {
             // Check if order was manually updated recently (within last 5 minutes)
-            // If so, preserve manual changes and skip sync update
+            // If so, preserve ALL manual changes, including status (do NOT overwrite).
             OffsetDateTime orderUpdatedAt = existingOrder.getUpdatedAt();
             OffsetDateTime now = OffsetDateTime.now();
-            
-            // If order was updated within the last 5 minutes, assume it was manually updated
-            // Preserve manual changes by skipping the sync update
+
             if (orderUpdatedAt != null) {
                 long minutesSinceUpdate = java.time.Duration.between(orderUpdatedAt, now).toMinutes();
-                
+
                 if (minutesSinceUpdate < 5) {
-                    // Order was recently updated (likely manually), preserve changes
-                    // Only update status if it changed in YouCan (status updates are safe)
-                    OrderStatus youcanStatus = mapYouCanStatusToOrderStatus(youcanOrder);
-                    if (existingOrder.getStatus() != youcanStatus) {
-                        // Only update status if it changed in YouCan
-                        existingOrder.setStatus(youcanStatus);
-                        orderRepository.saveAndFlush(existingOrder);
-                    }
+                    // Order was recently updated (very likely from Talabaty UI: support/admin changed status).
+                    // To avoid the bug where a YouCan sync resets a manually confirmed order back to "new",
+                    // we skip ALL field updates from YouCan, including status, and just keep the current values.
                     return existingOrder;
                 }
             }
-            
+
             // Order hasn't been manually updated recently, safe to sync from YouCan
             return orderService.updateOrder(
                     existingOrder.getId(),

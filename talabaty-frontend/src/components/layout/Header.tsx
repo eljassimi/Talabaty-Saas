@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bell, Menu, Search, ChevronDown, Settings, LogOut, Sun, Moon } from 'lucide-react'
+import { Bell, Menu, Search, ChevronDown, Settings, LogOut, Sun, Moon, Store as StoreIcon } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useStoreColor } from '../../hooks/useStoreColor'
@@ -247,6 +247,18 @@ export default function Header({ onMenuClick, storeCount = 0 }: HeaderProps) {
                   </p>
                 </div>
                 <div className="py-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileOpen(false)
+                      navigate('/select-store')
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm header-dropdown-item text-left transition-colors"
+                    style={{ color: dropdownTextMuted }}
+                  >
+                    <StoreIcon className="h-4 w-4" />
+                    Switch store
+                  </button>
                   <Link
                     to="/settings"
                     onClick={() => setProfileOpen(false)}

@@ -73,7 +73,7 @@ export default function SendToShippingModal({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <img 
-              src="https://ozonexpress.ma/wp/wp-content/uploads/2025/07/Untitled-design-38.png"
+              src="https://ozoneexpress.ma/wp/wp-content/uploads/2025/07/Untitled-design-38.png"
               alt="Ozon Express"
               className="h-10 w-10 object-contain"
             />

@@ -3,12 +3,14 @@ import { useParams, Link } from 'react-router-dom'
 import { storeService, Store, ShippingProvider } from '../services/storeService'
 import { teamService, TeamMember } from '../services/teamService'
 import { googleSheetsSyncService, GoogleSheetsSyncConfig } from '../services/googleSheetsSyncService'
-import { ArrowLeft, Settings, Truck, Users, Plus, Store as StoreIcon, FileSpreadsheet, RefreshCw, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowLeft, Settings, Truck, Users, Plus, Store as StoreIcon, FileSpreadsheet, RefreshCw, CheckCircle, XCircle, Banknote } from 'lucide-react'
 import ShippingProviderForm from '../components/ShippingProviderForm'
 import CreateTeamMemberModal from '../components/CreateTeamMemberModal'
 import GoogleSheetsSyncModal from '../components/GoogleSheetsSyncModal'
 import YouCanIntegration from '../components/YouCanIntegration'
 import { useStoreColor } from '../hooks/useStoreColor'
+import { useAuth } from '../contexts/AuthContext'
+import { getPermissions } from '../utils/permissions'
 
 export default function StoreDetail() {
   const { id } = useParams<{ id: string }>()
@@ -21,6 +23,10 @@ export default function StoreDetail() {
   const [showProviderForm, setShowProviderForm] = useState(false)
   const [showTeamModal, setShowTeamModal] = useState(false)
   const [showSyncModal, setShowSyncModal] = useState(false)
+  const [supportRevenueSettings, setSupportRevenueSettings] = useState<{ pricePerOrderConfirmedMad: number; pricePerOrderDeliveredMad: number } | null>(null)
+  const [supportRevenueSaving, setSupportRevenueSaving] = useState(false)
+  const { user } = useAuth()
+  const canUpdateStore = getPermissions(user?.role).canUpdateStore
 
   useEffect(() => {
     if (id) {
@@ -86,6 +92,37 @@ export default function StoreDetail() {
     } catch (error) {
       console.error('Error loading sync config:', error)
       setSyncConfig(null)
+    }
+  }
+
+  const loadSupportRevenueSettings = async () => {
+    if (!id || !canUpdateStore) return
+    try {
+      const data = await storeService.getSupportRevenueSettings(id)
+      setSupportRevenueSettings(data)
+    } catch {
+      setSupportRevenueSettings({ pricePerOrderConfirmedMad: 0, pricePerOrderDeliveredMad: 0 })
+    }
+  }
+
+  useEffect(() => {
+    if (id && canUpdateStore) {
+      loadSupportRevenueSettings()
+    } else {
+      setSupportRevenueSettings(null)
+    }
+  }, [id, canUpdateStore])
+
+  const handleSaveSupportRevenue = async () => {
+    if (!id || !supportRevenueSettings) return
+    setSupportRevenueSaving(true)
+    try {
+      await storeService.updateSupportRevenueSettings(id, {
+        pricePerOrderConfirmedMad: supportRevenueSettings.pricePerOrderConfirmedMad,
+        pricePerOrderDeliveredMad: supportRevenueSettings.pricePerOrderDeliveredMad,
+      })
+    } finally {
+      setSupportRevenueSaving(false)
     }
   }
 
@@ -195,7 +232,7 @@ export default function StoreDetail() {
                     <div className="flex items-center space-x-4">
                       {isOzonExpress ? (
                         <img 
-                          src="https://ozonexpress.ma/wp/wp-content/uploads/2025/07/Untitled-design-38.png"
+                          src="https://ozoneexpress.ma/wp/wp-content/uploads/2025/07/Untitled-design-38.png"
                           alt="Ozon Express"
                           className="h-12 w-12 object-contain"
                         />
@@ -284,6 +321,72 @@ export default function StoreDetail() {
           )}
         </div>
       </div>
+
+      {/* Support team revenue (admin/manager: set price per order for confirmation team) */}
+      {canUpdateStore && id && (
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="flex items-center">
+              <Banknote className="h-5 w-5 text-gray-400 mr-2" />
+              <h2 className="text-lg font-semibold text-gray-900">Support team revenue</h2>
+            </div>
+          </div>
+          <div className="px-6 py-4">
+            <p className="text-sm text-gray-600 mb-2">
+              Set the amount (MAD) you pay to the support team member for each order they handle. This is credited to their balance when they confirm the order.
+            </p>
+            <p className="text-xs text-gray-500 mb-4">
+              Only &quot;confirmed&quot; orders count for revenue right now. Save after changing the value.
+            </p>
+            {supportRevenueSettings && (
+              <div className="flex flex-wrap gap-6 items-end">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount per order confirmed (MAD)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 10"
+                    value={supportRevenueSettings.pricePerOrderConfirmedMad ?? 0}
+                    onChange={(e) =>
+                      setSupportRevenueSettings((s) =>
+                        s ? { ...s, pricePerOrderConfirmedMad: parseFloat(e.target.value) || 0 } : s
+                      )
+                    }
+                    className="rounded-lg border border-gray-300 px-3 py-2 w-36"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Paid to support when they confirm this order</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount per order delivered (MAD)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 15"
+                    value={supportRevenueSettings.pricePerOrderDeliveredMad ?? 0}
+                    onChange={(e) =>
+                      setSupportRevenueSettings((s) =>
+                        s ? { ...s, pricePerOrderDeliveredMad: parseFloat(e.target.value) || 0 } : s
+                      )
+                    }
+                    className="rounded-lg border border-gray-300 px-3 py-2 w-36"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Reserved for when delivered revenue is enabled</p>
+                </div>
+                <button
+                  onClick={handleSaveSupportRevenue}
+                  disabled={supportRevenueSaving}
+                  className="px-4 py-2 rounded-lg text-white font-medium disabled:opacity-50"
+                  style={{ backgroundColor: storeColor || '#0284c7' }}
+                >
+                  {supportRevenueSaving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* YouCan Integration */}
       {id && <YouCanIntegration storeId={id} />}

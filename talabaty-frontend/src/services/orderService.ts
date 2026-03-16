@@ -15,6 +15,7 @@ export interface Order {
   source: OrderSource
   externalOrderId?: string
   ozonTrackingNumber?: string
+  deliveryNoteRef?: string
   productName?: string
   productId?: string
   city?: string

@@ -8,43 +8,78 @@ on:
 
 env:
   JAVA_VERSION: "17"
+  NODE_VERSION: "20"
 
 jobs:
-  build-and-test:
+  backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: temurin
           cache: maven
 
-      - name: Build and run tests
+      - name: Build and run tests (Maven)
         run: ./mvnw verify -B
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: "talabaty-frontend/package-lock.json"
+
+      - name: Install dependencies
+        working-directory: talabaty-frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: talabaty-frontend
+        run: npm run lint
+
+      - name: Build
+        working-directory: talabaty-frontend
+        run: npm run build
 
   docker:
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      - name: Build backend Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: false
           load: true
-          tags: talabaty:latest
+          tags: talabaty-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Uncomment and add secrets to push image to GitHub Container Registry
+      - name: Build WhatsApp bridge Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./whatsapp-bridge
+          push: false
+          load: true
+          tags: talabaty-whatsapp-bridge:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Example: push images to GitHub Container Registry on main/master pushes
   # push-image:
   #   runs-on: ubuntu-latest
   #   needs: docker
@@ -57,11 +92,19 @@ jobs:
   #         registry: ghcr.io
   #         username: ${{ github.actor }}
   #         password: ${{ secrets.GITHUB_TOKEN }}
-  #     - name: Build and push
+  #     - name: Build and push backend image
   #       uses: docker/build-push-action@v6
   #       with:
   #         context: .
   #         push: true
-  #         tags: ghcr.io/${{ github.repository_owner }}/talabaty:latest
+  #         tags: ghcr.io/${{ github.repository_owner }}/talabaty-backend:latest
+  #         cache-from: type=gha
+  #         cache-to: type=gha,mode=max
+  #     - name: Build and push WhatsApp bridge image
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         context: ./whatsapp-bridge
+  #         push: true
+  #         tags: ghcr.io/${{ github.repository_owner }}/talabaty-whatsapp-bridge:latest
   #         cache-from: type=gha
   #         cache-to: type=gha,mode=max

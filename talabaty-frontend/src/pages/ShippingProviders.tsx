@@ -102,7 +102,7 @@ export default function ShippingProviders() {
                             <div className="flex items-center space-x-4">
                               {isOzonExpress ? (
                                 <img 
-                                  src="https://ozonexpress.ma/wp/wp-content/uploads/2025/07/Untitled-design-38.png"
+                                  src="https://ozoneexpress.ma/wp/wp-content/uploads/2025/07/Untitled-design-38.png"
                                   alt="Ozon Express"
                                   className="h-12 w-12 object-contain"
                                 />
