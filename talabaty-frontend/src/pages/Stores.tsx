@@ -215,15 +215,6 @@ export default function Stores() {
                     style={{
                       color: storeColor,
                     }}
-                    onMouseEnter={(e) => {
-                      const rgb = hexToRgb(storeColor)
-                      e.currentTarget.style.color = storeColor
-                      e.currentTarget.style.backgroundColor = `${storeColor}15`
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = storeColor
-                      e.currentTarget.style.backgroundColor = ''
-                    }}
                     title="Edit"
                   >
                     <Edit className="h-5 w-5" />

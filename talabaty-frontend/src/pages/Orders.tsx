@@ -22,82 +22,7 @@ function hexToRgb(hex: string) {
   } : { r: 2, g: 132, b: 199 }
 }
 
-// Pagination component
-function Pagination({ currentPage, totalPages, onPageChange, storeColor }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void; storeColor: string }) {
-  const pages = []
-  const maxVisible = 5
-  
-  let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2))
-  let endPage = Math.min(totalPages, startPage + maxVisible - 1)
-  
-  if (endPage - startPage < maxVisible - 1) {
-    startPage = Math.max(1, endPage - maxVisible + 1)
-  }
-  
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i)
-  }
-  
-  return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-white">
-      <div className="flex items-center space-x-2">
-        <button
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        {startPage > 1 && (
-          <>
-            <button
-              onClick={() => onPageChange(1)}
-              className="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              1
-            </button>
-            {startPage > 2 && <span className="px-2 text-gray-500">...</span>}
-          </>
-        )}
-        {pages.map((page) => (
-          <button
-            key={page}
-            onClick={() => onPageChange(page)}
-            className={`px-3 py-1.5 border rounded-md text-sm font-medium ${
-              page === currentPage
-                ? 'border-primary-500 bg-primary-50 text-primary-700'
-                : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
-            }`}
-            style={page === currentPage ? { borderColor: storeColor || '#0284c7', backgroundColor: `${storeColor || '#0284c7'}15`, color: storeColor || '#0284c7' } : {}}
-          >
-            {page}
-          </button>
-        ))}
-        {endPage < totalPages && (
-          <>
-            {endPage < totalPages - 1 && <span className="px-2 text-gray-500">...</span>}
-            <button
-              onClick={() => onPageChange(totalPages)}
-              className="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              {totalPages}
-            </button>
-          </>
-        )}
-        <button
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="text-sm text-gray-700">
-        Page {currentPage} of {totalPages}
-      </div>
-    </div>
-  )
-}
+// Pagination helper previously defined here is no longer used
 
 export default function Orders() {
   const navigate = useNavigate()
@@ -105,7 +30,7 @@ export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([])
   const [stores, setStores] = useState<Store[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedStore, setSelectedStore] = useState<string>('all')
+  const [selectedStore] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showBonDeLivraisonModal, setShowBonDeLivraisonModal] = useState(false)
