@@ -19,16 +19,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-    "http://localhost:3001",
-    "http://127.0.0.1:3001",
-    "http://localhost:3002",
-    "http://127.0.0.1:3002"
-}, maxAge = 3600)
 public class AuthController {
 
     private final UserService userService;
@@ -44,9 +34,7 @@ public class AuthController {
         this.userMapper = userMapper;
     }
 
-    /**
-     * GET /api/auth - Info for browser or API explorers (actual auth uses POST).
-     */
+    
     @GetMapping
     public ResponseEntity<Map<String, Object>> authInfo() {
         return ResponseEntity.ok(Map.of(
@@ -62,10 +50,14 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
-        // Create account
-        var account = accountService.createAccount(request.getAccountName(), request.getAccountType());
         
-        // Create user as account owner
+        String derived = (request.getFirstName() + " " + request.getLastName()).trim();
+        String accountName = derived.isBlank() ? request.getEmail() : derived;
+        accountName = accountName.length() > 180 ? accountName.substring(0, 180) : accountName;
+
+        var account = accountService.createAccount(accountName, request.getAccountType());
+        
+        
         User user = userService.createUser(
                 request.getEmail(),
                 request.getPassword(),
@@ -76,10 +68,10 @@ public class AuthController {
                 UserRole.ACCOUNT_OWNER
         );
 
-        // Generate tokens
+        
         String accessToken = tokenProvider.generateAccessToken(user.getId().toString(), user.getEmail(), account.getId().toString());
         String refreshToken = tokenProvider.generateRefreshToken(user.getId().toString());
-        Long expiresIn = 3600L; // 1 hour
+        Long expiresIn = 3600L; 
 
         UserDto userDto = userMapper.toDto(user);
         AuthResponse response = new AuthResponse(accessToken, refreshToken, expiresIn, userDto);
@@ -96,7 +88,7 @@ public class AuthController {
             throw new RuntimeException("Invalid email or password");
         }
 
-        // Update last login time
+        
         userService.updateLastLogin(user.getId());
 
         String accessToken = tokenProvider.generateAccessToken(user.getId().toString(), user.getEmail(), user.getAccount().getId().toString());
@@ -139,8 +131,7 @@ public class AuthController {
             userId = jwtUser.getUserId();
         }
 
-        // Allow null/empty currentPassword for first-time password changes
-        // Pass null if not provided, so the service can properly detect it
+        
         String currentPassword = (request.getCurrentPassword() != null && !request.getCurrentPassword().isEmpty()) 
                                 ? request.getCurrentPassword() 
                                 : null;

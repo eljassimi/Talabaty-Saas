@@ -1,130 +1,98 @@
-import { useMemo } from 'react'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  type ChartOptions,
-} from 'chart.js'
-import { Bar } from 'react-chartjs-2'
-import type { Order } from '../../services/orderService'
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
-
+import { useMemo } from 'react';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, type ChartOptions, } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+import type { Order } from '../../services/orderService';
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 interface RevenueChartProps {
-  orders: Order[]
-  brandColor: string
-  days?: number
-  isDark?: boolean
+    orders: Order[];
+    brandColor: string;
+    days?: number;
+    isDark?: boolean;
 }
-
-function groupRevenueByDay(
-  orders: Order[],
-  days: number
-): { labels: string[]; values: number[] } {
-  const now = new Date()
-  const start = new Date(now)
-  start.setDate(start.getDate() - days)
-  start.setHours(0, 0, 0, 0)
-
-  const map = new Map<string, number>()
-  for (let d = 0; d <= days; d++) {
-    const date = new Date(start)
-    date.setDate(date.getDate() + d)
-    const key = date.toISOString().slice(0, 10)
-    map.set(key, 0)
-  }
-
-  orders.forEach((o) => {
-    const key = new Date(o.createdAt).toISOString().slice(0, 10)
-    if (map.has(key)) {
-      const current = map.get(key) ?? 0
-      map.set(key, current + (o.totalAmount ?? 0))
+function groupRevenueByDay(orders: Order[], days: number): {
+    labels: string[];
+    values: number[];
+} {
+    const now = new Date();
+    const start = new Date(now);
+    start.setDate(start.getDate() - days);
+    start.setHours(0, 0, 0, 0);
+    const map = new Map<string, number>();
+    for (let d = 0; d <= days; d++) {
+        const date = new Date(start);
+        date.setDate(date.getDate() + d);
+        const key = date.toISOString().slice(0, 10);
+        map.set(key, 0);
     }
-  })
-
-  const sorted = [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-  return {
-    labels: sorted.map(([date]) => {
-      const d = new Date(date)
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    }),
-    values: sorted.map(([, sum]) => sum),
-  }
+    orders.forEach((o) => {
+        const key = new Date(o.createdAt).toISOString().slice(0, 10);
+        if (map.has(key)) {
+            const current = map.get(key) ?? 0;
+            map.set(key, current + (o.totalAmount ?? 0));
+        }
+    });
+    const sorted = [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    return {
+        labels: sorted.map(([date]) => {
+            const d = new Date(date);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }),
+        values: sorted.map(([, sum]) => sum),
+    };
 }
-
-const TICK_COLOR_LIGHT = '#6B7280'
-const TICK_COLOR_DARK = '#9CA3AF'
-const GRID_COLOR_LIGHT = '#E5E7EB'
-const GRID_COLOR_DARK = 'rgba(255, 255, 255, 0.12)'
-
+const TICK_COLOR_LIGHT = '#6B7280';
+const TICK_COLOR_DARK = '#9CA3AF';
+const GRID_COLOR_LIGHT = '#E5E7EB';
+const GRID_COLOR_DARK = 'rgba(255, 255, 255, 0.12)';
 export default function RevenueChart({ orders, brandColor, days = 14, isDark = false }: RevenueChartProps) {
-  const { labels, values } = useMemo(
-    () => groupRevenueByDay(orders, days),
-    [orders, days]
-  )
-
-  const data = useMemo(
-    () => ({
-      labels,
-      datasets: [
-        {
-          label: 'Revenue',
-          data: values,
-          backgroundColor: brandColor,
-          borderRadius: 6,
-        },
-      ],
-    }),
-    [labels, values, brandColor]
-  )
-
-  const options: ChartOptions<'bar'> = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 2,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: isDark ? '#2A2D35' : '#fff',
-          titleColor: isDark ? '#F3F4F6' : '#111827',
-          bodyColor: isDark ? '#D1D5DB' : '#6B7280',
-          borderColor: isDark ? '#3d4048' : '#E6E8EC',
-          borderWidth: 1,
-          callbacks: {
-            label: (ctx) => {
-              const v = ctx.raw as number
-              return `${Number(v).toFixed(2)} ${orders[0]?.currency ?? 'MAD'}`
+    const { labels, values } = useMemo(() => groupRevenueByDay(orders, days), [orders, days]);
+    const data = useMemo(() => ({
+        labels,
+        datasets: [
+            {
+                label: 'Revenue',
+                data: values,
+                backgroundColor: brandColor,
+                borderRadius: 6,
             },
-          },
+        ],
+    }), [labels, values, brandColor]);
+    const options: ChartOptions<'bar'> = useMemo(() => ({
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: isDark ? '#2A2D35' : '#fff',
+                titleColor: isDark ? '#F3F4F6' : '#111827',
+                bodyColor: isDark ? '#D1D5DB' : '#6B7280',
+                borderColor: isDark ? '#3d4048' : '#E6E8EC',
+                borderWidth: 1,
+                callbacks: {
+                    label: (ctx) => {
+                        const v = ctx.raw as number;
+                        return `${Number(v).toFixed(2)} ${orders[0]?.currency ?? 'MAD'}`;
+                    },
+                },
+            },
         },
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { color: isDark ? TICK_COLOR_DARK : TICK_COLOR_LIGHT, font: { size: 11 } },
+        scales: {
+            x: {
+                grid: { display: false },
+                ticks: { color: isDark ? TICK_COLOR_DARK : TICK_COLOR_LIGHT, font: { size: 11 } },
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: isDark ? GRID_COLOR_DARK : GRID_COLOR_LIGHT },
+                ticks: { color: isDark ? TICK_COLOR_DARK : TICK_COLOR_LIGHT, font: { size: 11 } },
+            },
         },
-        y: {
-          beginAtZero: true,
-          grid: { color: isDark ? GRID_COLOR_DARK : GRID_COLOR_LIGHT },
-          ticks: { color: isDark ? TICK_COLOR_DARK : TICK_COLOR_LIGHT, font: { size: 11 } },
-        },
-      },
-    }),
-    [orders, isDark]
-  )
-
-  if (labels.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-[200px] text-gray-500 dark:text-gray-400 text-sm">
+    }), [orders, isDark]);
+    if (labels.length === 0) {
+        return (<div className="flex items-center justify-center h-[200px] text-gray-500 dark:text-gray-400 text-sm">
         No revenue data for this period
-      </div>
-    )
-  }
-
-  return <Bar data={data} options={options} />
+      </div>);
+    }
+    return <Bar data={data} options={options}/>;
 }

@@ -27,18 +27,18 @@ public class OrderMapper {
         dto.setCurrency(order.getCurrency());
         dto.setMetadata(order.getMetadata());
         
-        // Use direct fields first, fallback to metadata if not set
+        
         dto.setProductName(order.getProductName());
         dto.setProductId(order.getProductId());
         
-        // Extract city from metadata if not set directly (fallback for old orders)
+        
         if (dto.getCity() == null && order.getMetadata() != null && !order.getMetadata().trim().isEmpty()) {
             try {
                 JsonNode metadataNode = objectMapper.readTree(order.getMetadata());
                 if (metadataNode.has("city")) {
                     dto.setCity(metadataNode.get("city").asText());
                 }
-                // Fallback: if productName/productId are not set directly, try metadata
+                
                 if (dto.getProductName() == null) {
                     if (metadataNode.has("productName")) {
                         dto.setProductName(metadataNode.get("productName").asText());
@@ -54,18 +54,18 @@ public class OrderMapper {
                     dto.setProductId(metadataNode.get("product_id").asText());
                 }
             } catch (Exception e) {
-                // If metadata parsing fails, just continue without extracting fields
-                // The raw metadata will still be available
+                
+                
             }
         }
         
-        // Map assignedTo user
+        
         if (order.getAssignedTo() != null) {
             dto.setAssignedToUserId(order.getAssignedTo().getId().toString());
             dto.setAssignedToName(order.getAssignedTo().getFirstName() + " " + order.getAssignedTo().getLastName());
         }
         
-        // Map tracking number and delivery note ref
+        
         dto.setOzonTrackingNumber(order.getOzonTrackingNumber());
         dto.setDeliveryNoteRef(order.getDeliveryNoteRef());
 

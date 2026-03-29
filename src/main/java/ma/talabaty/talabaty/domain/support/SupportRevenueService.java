@@ -30,33 +30,25 @@ public class SupportRevenueService {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Total earned by support user for a store (sum of all revenue entries).
-     */
+    
     public BigDecimal getTotalEarned(UUID userId, UUID storeId) {
         BigDecimal sum = revenueEntryRepository.sumAmountByUserAndStore(userId, storeId);
         return sum != null ? sum : BigDecimal.ZERO;
     }
 
-    /**
-     * Total already paid out to this user for this store (sum of paid payment requests).
-     */
+    
     public BigDecimal getTotalPaid(UUID userId, UUID storeId) {
         BigDecimal sum = paymentRequestRepository.sumAmountByUserAndStoreAndStatus(
                 userId, storeId, SupportPaymentRequest.PaymentRequestStatus.PAID);
         return sum != null ? sum : BigDecimal.ZERO;
     }
 
-    /**
-     * Current balance = total earned - total paid.
-     */
+    
     public BigDecimal getBalance(UUID userId, UUID storeId) {
         return getTotalEarned(userId, storeId).subtract(getTotalPaid(userId, storeId));
     }
 
-    /**
-     * Create a payment request from support user. Amount must not exceed balance.
-     */
+    
     public SupportPaymentRequest requestPayment(UUID userId, UUID storeId, BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be positive");
@@ -81,16 +73,12 @@ public class SupportRevenueService {
         return paymentRequestRepository.findByUser_IdAndStore_IdOrderByRequestedAtDesc(userId, storeId);
     }
 
-    /**
-     * List all payment requests for the account (admin only).
-     */
+    
     public List<SupportPaymentRequest> getPaymentRequestsByAccount(UUID accountId) {
         return paymentRequestRepository.findByAccountIdOrderByRequestedAtDesc(accountId);
     }
 
-    /**
-     * Mark a payment request as PAID (admin).
-     */
+    
     public SupportPaymentRequest markAsPaid(UUID requestId, UUID processedByUserId, String note) {
         SupportPaymentRequest request = paymentRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Payment request not found"));
@@ -102,9 +90,7 @@ public class SupportRevenueService {
         return paymentRequestRepository.save(request);
     }
 
-    /**
-     * Reject a payment request (admin).
-     */
+    
     public SupportPaymentRequest rejectRequest(UUID requestId, UUID processedByUserId, String note) {
         SupportPaymentRequest request = paymentRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Payment request not found"));

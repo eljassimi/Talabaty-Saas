@@ -10,10 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Scheduled job to automatically sync orders from connected YouCan stores
- * Runs every 5 minutes to fetch new orders from all active YouCan integrations
- */
+
 @Component
 public class YouCanOrderSyncScheduler {
 
@@ -28,16 +25,13 @@ public class YouCanOrderSyncScheduler {
         this.youCanOrderSyncService = youCanOrderSyncService;
     }
 
-    /**
-     * Sync orders from all active YouCan stores every 5 minutes
-     * This can be adjusted based on requirements (e.g., every 1 minute, 15 minutes, etc.)
-     */
-    @Scheduled(fixedRate = 300000) // 5 minutes (300000 milliseconds)
+    
+    @Scheduled(fixedRate = 300000) 
     public void syncAllYouCanStores() {
         try {
             logger.debug("Running scheduled YouCan orders sync");
             
-            // Get all active YouCan stores
+            
             List<YouCanStore> activeStores = youCanStoreRepository.findAll().stream()
                     .filter(YouCanStore::isActive)
                     .toList();
@@ -81,5 +75,4 @@ public class YouCanOrderSyncScheduler {
         }
     }
 }
-
 

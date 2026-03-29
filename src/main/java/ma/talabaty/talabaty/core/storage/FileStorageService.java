@@ -18,12 +18,12 @@ public class FileStorageService {
     private String uploadDir;
 
     public String storeFile(MultipartFile file, String accountId, String storeId) throws IOException {
-        // Create directory structure: uploads/accountId/storeId/
+        
         Path accountPath = Paths.get(uploadDir, accountId);
         Path storePath = accountPath.resolve(storeId);
         Files.createDirectories(storePath);
 
-        // Generate unique filename
+        
         String originalFilename = file.getOriginalFilename();
         String extension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
@@ -31,11 +31,11 @@ public class FileStorageService {
         }
         String filename = UUID.randomUUID().toString() + extension;
 
-        // Save file
+        
         Path targetPath = storePath.resolve(filename);
         Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-        // Return relative path
+        
         return Paths.get(accountId, storeId, filename).toString().replace("\\", "/");
     }
 

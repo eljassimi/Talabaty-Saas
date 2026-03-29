@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
         Map<String, String> error = new HashMap<>();
         String message = ex.getMessage();
         if (message != null && message.contains("UUID")) {
-            // Check if this is related to authentication (empty string case)
+            
             if (message.contains("Invalid UUID string: ") && (message.trim().endsWith(":") || message.trim().endsWith(": "))) {
                 error.put("error", "Unable to extract account ID from authentication token. The JWT token may be invalid, expired, or not properly processed. Please ensure you are using a valid JWT token with 'Bearer ' prefix in the Authorization header. Try logging in again to get a new token.");
                 error.put("code", "AUTHENTICATION_ERROR");
@@ -57,21 +57,21 @@ public class GlobalExceptionHandler {
             message = "Error: " + ex.getClass().getSimpleName() + ". Check server logs.";
         }
         
-        // Log the exception for debugging
+        
         System.err.println("DEBUG GlobalExceptionHandler: RuntimeException caught: " + message);
         System.err.println("DEBUG GlobalExceptionHandler: Exception class: " + ex.getClass().getName());
         ex.printStackTrace();
         
-        // Check if this is a store access error
+        
         if (message != null && (message.contains("does not belong to your account") || message.contains("Store not found"))) {
             error.put("error", message);
             error.put("code", "STORE_ACCESS_DENIED");
-            error.put("message", message); // Also include in 'message' field for frontend compatibility
+            error.put("message", message); 
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
         }
         
         error.put("error", message);
-        error.put("message", message); // Also include in 'message' field for frontend compatibility
+        error.put("message", message); 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -106,7 +106,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
         Map<String, String> error = new HashMap<>();
         String message = ex.getMessage();
-        // Never send the generic "An unexpected error occurred" to client; always add exception type
+        
         boolean genericOrEmpty = message == null || message.isBlank()
                 || "An unexpected error occurred".equals(message.trim());
         if (!genericOrEmpty) {

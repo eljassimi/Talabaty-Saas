@@ -8,9 +8,7 @@ import org.springframework.web.servlet.resource.PathResourceResolver;
 
 import java.io.IOException;
 
-/**
- * Serves the React SPA: static files from /static, and index.html for client-side routes.
- */
+
 @Configuration
 public class SpaWebConfig implements WebMvcConfigurer {
 
@@ -26,7 +24,7 @@ public class SpaWebConfig implements WebMvcConfigurer {
                         if (resource.exists() && resource.isReadable()) {
                             return resource;
                         }
-                        // SPA fallback: serve index.html for non-API routes (e.g. /login, /stores)
+                        
                         return location.createRelative("index.html");
                     }
                 });

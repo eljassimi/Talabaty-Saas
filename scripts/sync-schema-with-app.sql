@@ -46,23 +46,3 @@ CREATE TABLE IF NOT EXISTS youcan_stores (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
--- excel_sync_configs table
-CREATE TABLE IF NOT EXISTS excel_sync_configs (
-  id UUID PRIMARY KEY,
-  store_id UUID NOT NULL REFERENCES stores(id),
-  spreadsheet_id VARCHAR(200) NOT NULL,
-  sheet_name VARCHAR(200) NOT NULL DEFAULT 'Sheet1',
-  credentials_json TEXT,
-  access_token TEXT,
-  refresh_token TEXT,
-  token_expires_at TIMESTAMP WITH TIME ZONE,
-  last_synced_row_count INT,
-  sync_enabled BOOLEAN NOT NULL DEFAULT true,
-  sync_interval_seconds INT NOT NULL DEFAULT 30,
-  column_mapping JSONB,
-  last_sync_at TIMESTAMP WITH TIME ZONE,
-  last_sync_status VARCHAR(50),
-  last_sync_error TEXT,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL
-);

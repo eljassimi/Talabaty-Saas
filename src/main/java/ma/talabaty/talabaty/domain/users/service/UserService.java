@@ -23,7 +23,7 @@ public class UserService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     
-    // Thread-local to store the last generated password for the current request
+    
     private static final ThreadLocal<String> lastGeneratedPassword = new ThreadLocal<>();
 
     public UserService(UserRepository userRepository, AccountRepository accountRepository, PasswordEncoder passwordEncoder) {
@@ -40,16 +40,16 @@ public class UserService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        // Generate password if not provided
+        
         String finalPassword = password;
         boolean mustChangePassword = false;
         if (password == null || password.isEmpty()) {
             finalPassword = generateTemporaryPassword();
             mustChangePassword = true;
-            // Store the generated password in thread-local for retrieval
+            
             lastGeneratedPassword.set(finalPassword);
         } else {
-            // Clear thread-local if password was provided
+            
             lastGeneratedPassword.remove();
         }
 
@@ -68,7 +68,7 @@ public class UserService {
     }
 
     private String generateTemporaryPassword() {
-        // Generate a random temporary password: 12 chars with uppercase, lowercase, numbers, and special chars
+        
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
         StringBuilder password = new StringBuilder();
         java.util.Random random = new java.util.Random();
@@ -78,13 +78,10 @@ public class UserService {
         return password.toString();
     }
     
-    /**
-     * Get the last generated password for the current thread
-     * This is used to return the generated password to the client
-     */
+    
     public String getLastGeneratedPassword() {
         String password = lastGeneratedPassword.get();
-        lastGeneratedPassword.remove(); // Clear after retrieval
+        lastGeneratedPassword.remove(); 
         return password;
     }
 
@@ -144,15 +141,12 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Skip current password validation if:
-        // 1. User is required to change password (mustChangePassword = true) - first-time password change
-        // 2. Current password is not provided (null or empty) - allows skipping for forced password changes
-        // Otherwise, validate the current password
+        
         boolean skipValidation = (user.getMustChangePassword() != null && user.getMustChangePassword()) 
                                 || (currentPassword == null || currentPassword.isEmpty());
         
         if (!skipValidation) {
-            // User is not required to change password and provided a current password, so validate it
+            
             if (!validatePassword(user, currentPassword)) {
                 throw new RuntimeException("Current password is incorrect");
             }

@@ -18,7 +18,7 @@ public class AuthenticationHelper {
             throw new AuthenticationException("Authentication principal is null. The token may be invalid or expired.");
         }
         
-        // Check if principal is JwtUser
+        
         if (principal instanceof JwtUser) {
             JwtUser jwtUser = (JwtUser) principal;
             String accountId = jwtUser.getAccountId();
@@ -32,20 +32,19 @@ public class AuthenticationHelper {
             }
         }
         
-        // Fallback: try to get accountId from principal.toString() or authentication.getName()
-        // This handles API key authentication where principal is a UUID string
+        
         String accountIdStr = null;
         if (principal instanceof String) {
             accountIdStr = (String) principal;
         } else if (principal instanceof UUID) {
             accountIdStr = principal.toString();
         } else {
-            // Try toString() first
+            
             String principalStr = principal.toString();
             if (principalStr != null && !principalStr.trim().isEmpty() && !principalStr.equals("null")) {
                 accountIdStr = principalStr;
             } else {
-                // Fallback to getName()
+                
                 accountIdStr = authentication.getName();
             }
         }
@@ -72,7 +71,7 @@ public class AuthenticationHelper {
         try {
             return UUID.fromString(accountIdStr);
         } catch (IllegalArgumentException e) {
-            // If accountIdStr is empty, provide a more helpful message
+            
             if (accountIdStr == null || accountIdStr.trim().isEmpty()) {
                 throw new InvalidAccountIdException(
                     "Unable to extract account ID from authentication. " +
@@ -103,7 +102,7 @@ public class AuthenticationHelper {
             throw new AuthenticationException("Authentication principal is null. The token may be invalid or expired.");
         }
         
-        // Check if principal is JwtUser
+        
         if (principal instanceof JwtUser) {
             JwtUser jwtUser = (JwtUser) principal;
             String userId = jwtUser.getUserId();
@@ -117,7 +116,7 @@ public class AuthenticationHelper {
             }
         }
         
-        // Fallback: try to get userId from authentication.getName() (should be userId for backward compatibility)
+        
         String userIdStr = authentication.getName();
         if (userIdStr == null || userIdStr.trim().isEmpty()) {
             throw new AuthenticationException(

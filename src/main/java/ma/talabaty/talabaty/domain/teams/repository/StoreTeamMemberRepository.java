@@ -23,7 +23,7 @@ public interface StoreTeamMemberRepository extends JpaRepository<StoreTeamMember
     @Query("SELECT tm FROM StoreTeamMember tm WHERE tm.store.id = :storeId AND tm.role = :role")
     List<StoreTeamMember> findByStoreIdAndRole(@Param("storeId") UUID storeId, @Param("role") StoreTeamRole role);
 
-    /** Support members with user loaded for order distribution. Only returns members with a linked user (accepted). Ordered by user id for stable round-robin. */
+    
     @Query("SELECT DISTINCT tm FROM StoreTeamMember tm JOIN FETCH tm.user u WHERE tm.store.id = :storeId AND tm.role IN :roles AND tm.user IS NOT NULL ORDER BY u.id")
     List<StoreTeamMember> findSupportMembersWithUserByStoreId(@Param("storeId") UUID storeId, @Param("roles") List<StoreTeamRole> roles);
     

@@ -80,10 +80,6 @@ public class Order {
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private String metadata;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "import_batch_id")
-    private OrderImportBatch importBatch;
-
     @OneToMany(mappedBy = "order")
     private Set<OrderStatusHistory> statusHistory = new HashSet<>();
 
@@ -223,14 +219,6 @@ public class Order {
         this.metadata = metadata;
     }
 
-    public OrderImportBatch getImportBatch() {
-        return importBatch;
-    }
-
-    public void setImportBatch(OrderImportBatch importBatch) {
-        this.importBatch = importBatch;
-    }
-
     public Set<OrderStatusHistory> getStatusHistory() {
         return statusHistory;
     }
@@ -251,5 +239,4 @@ public class Order {
         this.assignedTo = assignedTo;
     }
 }
-
 

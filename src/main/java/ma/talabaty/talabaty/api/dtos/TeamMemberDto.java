@@ -19,7 +19,7 @@ public class TeamMemberDto {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 
-    // Getters and setters
+    
     public String getId() {
         return id;
     }

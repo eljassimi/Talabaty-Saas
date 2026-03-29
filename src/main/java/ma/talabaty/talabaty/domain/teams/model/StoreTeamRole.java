@@ -6,4 +6,3 @@ public enum StoreTeamRole {
     EXTERNAL_SUPPORT
 }
 
-

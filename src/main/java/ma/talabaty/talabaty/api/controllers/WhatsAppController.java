@@ -15,10 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Exposes WhatsApp link status for the UI (e.g. show QR when using free bridge).
- * Support team cannot access integrations (link status).
- */
+
 @RestController
 @RequestMapping("/api/whatsapp")
 public class WhatsAppController {
@@ -35,11 +32,7 @@ public class WhatsAppController {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Returns whether WhatsApp is configured and, when using the free bridge, the current link state (QR to scan or ready).
-     * Frontend can poll this to show the QR on the website so admins can link their WhatsApp in the browser.
-     * Support team cannot access this.
-     */
+    
     @GetMapping("/link-status")
     public ResponseEntity<Map<String, Object>> getLinkStatus(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -59,7 +52,7 @@ public class WhatsAppController {
         }
         if (whatsAppService.isLocalBridgeConfigured()) {
             body.put("provider", "bridge");
-            // Global link status (without store id) for backwards compatibility.
+            
             Map<String, Object> bridge = whatsAppService.getBridgeLinkStatus();
             body.put("ready", bridge.getOrDefault("ready", false));
             if (bridge.containsKey("qr")) {

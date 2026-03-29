@@ -30,10 +30,7 @@ public class SupportController {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Get current user's balance for a store (total earned - total paid).
-     * Support users see their own balance; admins could be allowed to pass a userId (optional).
-     */
+    
     @GetMapping("/balance")
     public ResponseEntity<Map<String, Object>> getBalance(
             @RequestParam String storeId,
@@ -50,9 +47,7 @@ public class SupportController {
         return ResponseEntity.ok(body);
     }
 
-    /**
-     * Support user requests payment of the given amount (up to their balance).
-     */
+    
     @PostMapping("/request-payment")
     public ResponseEntity<Map<String, Object>> requestPayment(
             @RequestBody Map<String, Object> request,
@@ -80,9 +75,7 @@ public class SupportController {
         }
     }
 
-    /**
-     * List payment requests for the current (support) user and store.
-     */
+    
     @GetMapping("/payment-requests")
     public ResponseEntity<List<Map<String, Object>>> getMyPaymentRequests(
             @RequestParam String storeId,
@@ -92,9 +85,7 @@ public class SupportController {
         return ResponseEntity.ok(list.stream().map(this::toPaymentRequestMap).collect(Collectors.toList()));
     }
 
-    /**
-     * Admin: list all payment requests for the account.
-     */
+    
     @GetMapping("/payment-requests/admin")
     public ResponseEntity<List<Map<String, Object>>> getAllPaymentRequests(Authentication authentication) {
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
@@ -107,9 +98,7 @@ public class SupportController {
         return ResponseEntity.ok(list.stream().map(this::toPaymentRequestMapAdmin).collect(Collectors.toList()));
     }
 
-    /**
-     * Admin: mark a payment request as PAID.
-     */
+    
     @PutMapping("/payment-requests/{id}/paid")
     public ResponseEntity<Map<String, Object>> markAsPaid(
             @PathVariable String id,
@@ -125,9 +114,7 @@ public class SupportController {
         return ResponseEntity.ok(toPaymentRequestMapAdmin(pr));
     }
 
-    /**
-     * Admin: reject a payment request.
-     */
+    
     @PutMapping("/payment-requests/{id}/rejected")
     public ResponseEntity<Map<String, Object>> rejectRequest(
             @PathVariable String id,

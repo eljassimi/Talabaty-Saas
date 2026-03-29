@@ -42,12 +42,11 @@ public class ShippingController {
             JwtUser jwtUser = (JwtUser) authentication.getPrincipal();
             return UUID.fromString(jwtUser.getAccountId());
         }
-        // Fallback for backward compatibility
+        
         return UUID.fromString(authentication.getName());
     }
 
-    // ========== Shipping Provider Management ==========
-
+    
     @PostMapping("/providers")
     public ResponseEntity<ShippingProvider> createProvider(@RequestBody CreateProviderRequest request, Authentication authentication) {
         UUID accountId = getAccountIdFromAuth(authentication);
@@ -88,8 +87,7 @@ public class ShippingController {
         return ResponseEntity.noContent().build();
     }
 
-    // ========== Ozon Express Operations ==========
-
+    
     @PostMapping("/ozon-express/parcels")
     public ResponseEntity<Map<String, Object>> createParcel(
             @RequestBody CreateParcelRequest request,
@@ -120,7 +118,7 @@ public class ShippingController {
                 ozonRequest
         );
 
-        // Si un orderId est fourni, mettre à jour l'order avec le tracking number
+        
         if (request.getOrderId() != null && result.containsKey("TRACKING-NUMBER")) {
             Order order = orderRepository.findById(UUID.fromString(request.getOrderId()))
                     .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -158,7 +156,7 @@ public class ShippingController {
         ShippingProvider provider = providerService.getActiveProvider(accountId, ProviderType.OZON_EXPRESS)
                 .orElseThrow(() -> new RuntimeException("Ozon Express provider not configured for this account"));
 
-        // Validate request
+        
         if ((request.getTrackingNumber() == null || request.getTrackingNumber().trim().isEmpty()) &&
             (request.getTrackingNumbers() == null || request.getTrackingNumbers().isEmpty())) {
             Map<String, Object> error = new HashMap<>();
@@ -169,14 +167,14 @@ public class ShippingController {
         try {
             Map<String, Object> result;
             if (request.getTrackingNumbers() != null && !request.getTrackingNumbers().isEmpty()) {
-                // Bulk tracking
+                
                 result = ozonExpressService.trackMultipleParcels(
                         provider.getCustomerId(),
                         provider.getApiKey(),
                         request.getTrackingNumbers()
                 );
             } else {
-                // Single tracking
+                
                 result = ozonExpressService.trackParcel(
                         provider.getCustomerId(),
                         provider.getApiKey(),
@@ -246,10 +244,7 @@ public class ShippingController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * Create a full Bon de Livraison in one call: create BL, add parcels (from selected orders' tracking numbers), save BL.
-     * Returns the BL ref and PDF download links.
-     */
+    
     @PostMapping("/ozon-express/delivery-notes/create-full")
     public ResponseEntity<Map<String, Object>> createFullDeliveryNote(
             @RequestBody CreateFullDeliveryNoteRequest request,
@@ -370,7 +365,7 @@ public class ShippingController {
                 return ResponseEntity.badRequest().body(err);
             }
 
-            // Give Ozon time to generate the PDFs after save (they are generated only once the BL is saved)
+            
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
@@ -420,7 +415,7 @@ public class ShippingController {
         }
     }
 
-    /** Extract user-friendly error from Ozon response (e.g. ADD-BL MESSAGE). */
+    
     @SuppressWarnings("unchecked")
     private String extractOzonErrorMessage(Map<String, Object> createResult) {
         if (createResult == null) return null;
@@ -439,7 +434,7 @@ public class ShippingController {
         return null;
     }
 
-    /** Extract BL ref from Ozon add-delivery-note response (top-level ref/Ref/REF or ADD-BL -> NEW-BL -> REF). */
+    
     @SuppressWarnings("unchecked")
     private String extractDeliveryNoteRef(Map<String, Object> createResult) {
         if (createResult == null) return null;
@@ -457,7 +452,7 @@ public class ShippingController {
         return null;
     }
 
-    /** Check Ozon API response for success (no RESULT=ERROR in this map or nested maps). */
+    
     @SuppressWarnings("unchecked")
     private boolean isOzonSuccess(Map<String, Object> map) {
         if (map == null) return true;
@@ -469,7 +464,7 @@ public class ShippingController {
         return true;
     }
 
-    /** Extract first MESSAGE where RESULT=ERROR in Ozon response (this map or nested). */
+    
     @SuppressWarnings("unchecked")
     private String getOzonErrorMessageFromMap(Map<String, Object> map) {
         if (map == null) return null;
@@ -488,10 +483,7 @@ public class ShippingController {
         return null;
     }
 
-    /**
-     * Proxy to download a Bon de Livraison PDF so the user does not need to log in to Ozon.
-     * Uses the account's Ozon credentials to fetch the PDF from client.ozoneexpress.ma.
-     */
+    
     @GetMapping(value = "/ozon-express/delivery-notes/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> getDeliveryNotePdf(
             @RequestParam String ref,
@@ -517,8 +509,7 @@ public class ShippingController {
         return ResponseEntity.ok(cities);
     }
 
-    // ========== Request DTOs ==========
-
+    
     public static class CreateProviderRequest {
         private String customerId;
         private String apiKey;
@@ -549,7 +540,7 @@ public class ShippingController {
     }
 
     public static class CreateParcelRequest {
-        private String orderId; // Optionnel: pour lier à une commande
+        private String orderId; 
         private String trackingNumber;
         private String receiver;
         private String phone;
@@ -564,7 +555,7 @@ public class ShippingController {
         private Integer replace;
         private String products;
 
-        // Getters and setters
+        
         public String getOrderId() { return orderId; }
         public void setOrderId(String orderId) { this.orderId = orderId; }
         public String getTrackingNumber() { return trackingNumber; }
@@ -604,7 +595,7 @@ public class ShippingController {
 
     public static class TrackParcelRequest {
         private String trackingNumber;
-        private List<String> trackingNumbers; // Pour bulk tracking
+        private List<String> trackingNumbers; 
 
         public String getTrackingNumber() { return trackingNumber; }
         public void setTrackingNumber(String trackingNumber) { this.trackingNumber = trackingNumber; }

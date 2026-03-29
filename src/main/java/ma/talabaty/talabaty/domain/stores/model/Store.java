@@ -60,7 +60,7 @@ public class Store {
     private String logoUrl;
 
     @Column(name = "color", length = 7)
-    private String color = "#0284c7"; // Default blue color
+    private String color = "#0284c7"; 
 
     @OneToOne(mappedBy = "store", cascade = CascadeType.ALL, orphanRemoval = true)
     private StoreSettings settings;
@@ -181,5 +181,4 @@ public class Store {
         return updatedAt;
     }
 }
-
 

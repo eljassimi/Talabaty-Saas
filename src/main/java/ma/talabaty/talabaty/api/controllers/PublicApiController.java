@@ -38,7 +38,7 @@ public class PublicApiController {
             JwtUser jwtUser = (JwtUser) authentication.getPrincipal();
             return UUID.fromString(jwtUser.getAccountId());
         }
-        // Fallback for backward compatibility (also works with API key authentication)
+        
         return UUID.fromString(authentication.getName());
     }
 
@@ -46,7 +46,7 @@ public class PublicApiController {
     public ResponseEntity<OrderDto> createOrder(@Valid @RequestBody CreateOrderRequest request, Authentication authentication) {
         UUID accountId = getAccountIdFromAuth(authentication);
         
-        // Find first store for the account (or you can add storeId to request)
+        
         var stores = storeRepository.findByAccountId(accountId);
         if (stores.isEmpty()) {
             throw new RuntimeException("No store found for this account");
@@ -63,7 +63,9 @@ public class PublicApiController {
                 request.getExternalOrderId(),
                 OrderSource.API,
                 request.getProductName(),
-                request.getProductId()
+                request.getProductId(),
+                null,
+                null
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(orderMapper.toDto(order));
     }
@@ -75,7 +77,7 @@ public class PublicApiController {
         Order order = orderService.findById(orderUuid)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // Verify order belongs to account
+        
         if (!order.getStore().getAccount().getId().equals(accountId)) {
             throw new RuntimeException("Order not found");
         }
@@ -97,7 +99,7 @@ public class PublicApiController {
         private String productName;
         private String productId;
 
-        // Getters and setters
+        
         public String getCustomerName() { return customerName; }
         public void setCustomerName(String customerName) { this.customerName = customerName; }
         public String getCustomerPhone() { return customerPhone; }

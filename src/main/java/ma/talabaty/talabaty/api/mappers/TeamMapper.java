@@ -12,7 +12,7 @@ public class TeamMapper {
         dto.setId(member.getId() != null ? member.getId().toString() : null);
         dto.setStoreId(member.getStore() != null ? member.getStore().getId().toString() : null);
         
-        // Map user information if user exists
+        
         if (member.getUser() != null) {
             dto.setUserId(member.getUser().getId().toString());
             dto.setEmail(member.getUser().getEmail());
@@ -20,7 +20,7 @@ public class TeamMapper {
             dto.setLastName(member.getUser().getLastName());
         }
         
-        // Map external member email if exists
+        
         dto.setExternalMemberEmail(member.getExternalMemberEmail());
         
         dto.setRole(member.getRole());

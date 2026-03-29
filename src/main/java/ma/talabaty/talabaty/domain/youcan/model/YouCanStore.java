@@ -48,7 +48,7 @@ public class YouCanStore {
     private OffsetDateTime tokenExpiresAt;
 
     @Column(name = "scopes", length = 500)
-    private String scopes; // Comma-separated list of granted scopes
+    private String scopes; 
 
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
@@ -64,7 +64,7 @@ public class YouCanStore {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    // Getters and setters
+    
     public UUID getId() {
         return id;
     }

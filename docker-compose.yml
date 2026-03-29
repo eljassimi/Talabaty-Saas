@@ -9,6 +9,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       WHATSAPP_LOCAL_URL: http://whatsapp-bridge:3100
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:8080}
     volumes:
       - app-uploads:/app/uploads
     depends_on:

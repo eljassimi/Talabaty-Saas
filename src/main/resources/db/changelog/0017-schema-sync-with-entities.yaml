@@ -1,4 +1,3 @@
-# Migration: align database schema with JPA entities (stores, orders, shipping_providers, youcan_stores, excel_sync_configs)
 databaseChangeLog:
   - changeSet:
       id: 0017-schema-sync-with-entities
@@ -7,18 +6,15 @@ databaseChangeLog:
         - sql:
             splitStatements: false
             sql: |
-              -- stores: logo and color (for UI)
               ALTER TABLE stores ADD COLUMN IF NOT EXISTS logo_url TEXT;
               ALTER TABLE stores ADD COLUMN IF NOT EXISTS color VARCHAR(7) DEFAULT '#0284c7';
 
-              -- orders: product/city/assigned_to
               ALTER TABLE orders ADD COLUMN IF NOT EXISTS ozon_tracking_number VARCHAR(120);
               ALTER TABLE orders ADD COLUMN IF NOT EXISTS city VARCHAR(120);
               ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_name VARCHAR(255);
               ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_id VARCHAR(255);
               ALTER TABLE orders ADD COLUMN IF NOT EXISTS assigned_to UUID REFERENCES users(id);
 
-              -- shipping_providers table (if missing)
               CREATE TABLE IF NOT EXISTS shipping_providers (
                 id UUID PRIMARY KEY,
                 account_id UUID NOT NULL REFERENCES accounts(id),
@@ -32,7 +28,6 @@ databaseChangeLog:
                 updated_at TIMESTAMP WITH TIME ZONE NOT NULL
               );
 
-              -- youcan_stores table (if missing)
               CREATE TABLE IF NOT EXISTS youcan_stores (
                 id UUID PRIMARY KEY,
                 account_id UUID NOT NULL REFERENCES accounts(id),
@@ -50,7 +45,6 @@ databaseChangeLog:
                 updated_at TIMESTAMP WITH TIME ZONE NOT NULL
               );
 
-              -- excel_sync_configs table (if missing)
               CREATE TABLE IF NOT EXISTS excel_sync_configs (
                 id UUID PRIMARY KEY,
                 store_id UUID NOT NULL REFERENCES stores(id),

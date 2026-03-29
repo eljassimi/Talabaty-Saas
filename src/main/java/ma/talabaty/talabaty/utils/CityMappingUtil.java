@@ -5,17 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Utility class to map city names to Ozon Express city IDs
- * This matches the cityMapping.ts file in the frontend
- */
+
 public class CityMappingUtil {
     
     private static final Map<String, Integer> CITY_MAPPING = new HashMap<>();
     private static final ObjectMapper objectMapper = new ObjectMapper();
     
     static {
-        // Initialize city mapping (matching frontend cityMapping.ts)
+        
         CITY_MAPPING.put("agadir", 37);
         CITY_MAPPING.put("ait melloul", 49);
         CITY_MAPPING.put("al hoceima", 55);
@@ -26,7 +23,7 @@ public class CityMappingUtil {
         CITY_MAPPING.put("dakhla", 103);
         CITY_MAPPING.put("el jadida", 109);
         CITY_MAPPING.put("fes", 127);
-        CITY_MAPPING.put("fès", 127); // Alternative spelling
+        CITY_MAPPING.put("fès", 127); 
         CITY_MAPPING.put("fnideq", 133);
         CITY_MAPPING.put("fquih ben salah", 139);
         CITY_MAPPING.put("inzegane", 151);
@@ -64,14 +61,10 @@ public class CityMappingUtil {
         CITY_MAPPING.put("sidi sliman", 463);
         CITY_MAPPING.put("bouznika", 472);
         CITY_MAPPING.put("tit mellil", 478);
-        // Add more cities as needed - this is a subset, you may want to add all cities from cityMapping.ts
+        
     }
     
-    /**
-     * Find city ID from city name (case-insensitive, with fuzzy matching)
-     * @param cityName The city name to look up
-     * @return The city ID if found, null otherwise
-     */
+    
     public static Integer findCityId(String cityName) {
         if (cityName == null || cityName.trim().isEmpty()) {
             return null;
@@ -79,18 +72,18 @@ public class CityMappingUtil {
         
         String normalized = cityName.toLowerCase().trim();
         
-        // Direct match
+        
         if (CITY_MAPPING.containsKey(normalized)) {
             return CITY_MAPPING.get(normalized);
         }
         
-        // Try removing extra spaces and special characters
+        
         normalized = normalized.replaceAll("\\s+", " ").trim();
         if (CITY_MAPPING.containsKey(normalized)) {
             return CITY_MAPPING.get(normalized);
         }
         
-        // Try partial match (contains)
+        
         for (Map.Entry<String, Integer> entry : CITY_MAPPING.entrySet()) {
             if (normalized.contains(entry.getKey()) || entry.getKey().contains(normalized)) {
                 return entry.getValue();
@@ -100,11 +93,7 @@ public class CityMappingUtil {
         return null;
     }
     
-    /**
-     * Extract city from order metadata and find its ID
-     * @param metadata JSON metadata string
-     * @return City ID if found, null otherwise
-     */
+    
     public static Integer findCityIdFromMetadata(String metadata) {
         if (metadata == null || metadata.trim().isEmpty()) {
             return null;
@@ -117,7 +106,7 @@ public class CityMappingUtil {
                 return findCityId(cityName);
             }
         } catch (Exception e) {
-            // If parsing fails, return null
+            
         }
         
         return null;

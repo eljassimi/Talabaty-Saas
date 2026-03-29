@@ -17,7 +17,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import ma.talabaty.talabaty.domain.accounts.model.Account;
-import ma.talabaty.talabaty.domain.orders.model.OrderImportBatch;
 import ma.talabaty.talabaty.domain.orders.model.OrderStatusHistory;
 import ma.talabaty.talabaty.domain.teams.model.StoreTeamMember;
 import org.hibernate.annotations.CreationTimestamp;
@@ -77,9 +76,6 @@ public class User {
 
     @OneToMany(mappedBy = "changedBy")
     private Set<OrderStatusHistory> statusChanges = new HashSet<>();
-
-    @OneToMany(mappedBy = "uploader")
-    private Set<OrderImportBatch> importBatches = new HashSet<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -205,9 +201,5 @@ public class User {
         return statusChanges;
     }
 
-    public Set<OrderImportBatch> getImportBatches() {
-        return importBatches;
-    }
 }
-
 

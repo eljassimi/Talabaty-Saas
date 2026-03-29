@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ma.talabaty.talabaty.domain.orders.model.Order;
 import ma.talabaty.talabaty.domain.orders.model.OrderSource;
-import ma.talabaty.talabaty.domain.orders.model.OrderStatus;
 import ma.talabaty.talabaty.domain.orders.repository.OrderRepository;
 import ma.talabaty.talabaty.domain.orders.service.OrderService;
 import ma.talabaty.talabaty.domain.stores.model.Store;
@@ -42,9 +41,7 @@ public class YouCanOrderSyncService {
         this.objectMapper = objectMapper;
     }
 
-    /**
-     * Sync orders from a YouCan store
-     */
+    
     @Transactional
     public int syncOrdersFromYouCanStore(UUID youCanStoreId) {
         YouCanStore youCanStore = youCanStoreRepository.findById(youCanStoreId)
@@ -54,20 +51,20 @@ public class YouCanOrderSyncService {
         int syncedCount = 0;
 
         try {
-            // Build filters for orders (e.g., last 30 days, or since last sync)
+            
             Map<String, String> filters = new HashMap<>();
             if (youCanStore.getLastSyncAt() != null) {
-                // Sync orders created or updated since last sync
+                
                 filters.put("updated_at_min", youCanStore.getLastSyncAt().toString());
             } else {
-                // First sync: get orders from last 30 days
+                
                 filters.put("created_at_min", OffsetDateTime.now().minusDays(30).toString());
             }
 
-            // Fetch orders from YouCan
+            
             Map<String, Object> ordersResponse = youCanApiService.listOrders(youCanStore, filters);
             
-            // Parse orders from response (adjust based on actual YouCan API response structure)
+            
             List<Map<String, Object>> orders = extractOrdersFromResponse(ordersResponse);
 
             for (Map<String, Object> youcanOrder : orders) {
@@ -80,7 +77,7 @@ public class YouCanOrderSyncService {
                 }
             }
 
-            // Update last sync timestamp
+            
             youCanStore.setLastSyncAt(OffsetDateTime.now());
             youCanStoreRepository.save(youCanStore);
 
@@ -93,70 +90,62 @@ public class YouCanOrderSyncService {
         return syncedCount;
     }
 
-    /**
-     * Sync a single order from YouCan
-     */
+    
     @Transactional
     public Order syncSingleOrder(Store store, Map<String, Object> youcanOrder, YouCanStore youCanStore) {
-        // Extract YouCan order ID - handle different possible formats
+        
         Object orderIdObj = youcanOrder.get("id");
         String youcanOrderId = null;
         
         if (orderIdObj != null) {
             youcanOrderId = String.valueOf(orderIdObj).trim();
-            // Handle null string
+            
             if (youcanOrderId.equals("null") || youcanOrderId.isEmpty()) {
                 youcanOrderId = null;
             }
         }
         
-        // If no valid order ID, skip this order (can't track duplicates)
+        
         if (youcanOrderId == null || youcanOrderId.isEmpty()) {
             throw new RuntimeException("YouCan order missing ID, cannot sync");
         }
         
-        // Check if order already exists (by external_order_id)
+        
         Order existingOrder = orderRepository.findByStoreIdAndExternalOrderId(
                 store.getId(), youcanOrderId)
                 .orElse(null);
 
-        // Extract customer ID from order and fetch full customer details
+        
         String customerId = extractCustomerId(youcanOrder);
         Map<String, Object> customerData = null;
         
         if (customerId != null && !customerId.isEmpty()) {
             try {
                 customerData = youCanApiService.getCustomer(youCanStore, customerId);
-                System.out.println("Fetched customer data for ID: " + customerId);
             } catch (Exception e) {
                 System.err.println("Failed to fetch customer data for ID " + customerId + ": " + e.getMessage());
-                // Continue with order data extraction as fallback
+                
             }
         }
         
-        // Extract order data from YouCan order (use customer data if available)
+        
         String customerName = extractCustomerName(youcanOrder, customerData);
         String customerPhone = extractCustomerPhone(youcanOrder, customerData);
         String destinationAddress = extractDestinationAddress(youcanOrder, customerData);
         BigDecimal totalAmount = extractTotalAmount(youcanOrder);
         String currency = extractCurrency(youcanOrder);
-        OrderStatus status = mapYouCanStatusToOrderStatus(youcanOrder);
-        
-        System.out.println("Extracted values:");
-        System.out.println("  Customer Name: " + customerName);
-        System.out.println("  Customer Phone: " + customerPhone);
-        System.out.println("  Product Name: " + extractProductName(youcanOrder));
-        System.out.println("  Total Amount: " + totalAmount);
-        
-        // Build metadata JSON
+
+        String city = extractCity(youcanOrder, customerData);
+        if (city == null) {
+            city = enrichCityFromFullOrder(youCanStore, youcanOrderId, customerData, youcanOrder);
+        }
+
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("youcan_order_id", youcanOrderId);
         metadata.put("youcan_order_number", youcanOrder.get("order_number"));
         metadata.put("youcan_store_id", youCanStore.getYoucanStoreId());
         metadata.put("youcan_store_domain", youCanStore.getYoucanStoreDomain());
-        
-        // Add city if available in shipping address or customer data
-        String city = extractCity(youcanOrder, customerData);
+
         if (city != null) {
             metadata.put("city", city);
         }
@@ -169,8 +158,8 @@ public class YouCanOrderSyncService {
         }
 
         if (existingOrder != null) {
-            // Check if order was manually updated recently (within last 5 minutes)
-            // If so, preserve ALL manual changes, including status (do NOT overwrite).
+            
+            
             OffsetDateTime orderUpdatedAt = existingOrder.getUpdatedAt();
             OffsetDateTime now = OffsetDateTime.now();
 
@@ -178,14 +167,13 @@ public class YouCanOrderSyncService {
                 long minutesSinceUpdate = java.time.Duration.between(orderUpdatedAt, now).toMinutes();
 
                 if (minutesSinceUpdate < 5) {
-                    // Order was recently updated (very likely from Talabaty UI: support/admin changed status).
-                    // To avoid the bug where a YouCan sync resets a manually confirmed order back to "new",
-                    // we skip ALL field updates from YouCan, including status, and just keep the current values.
+                    
+                    
                     return existingOrder;
                 }
             }
 
-            // Order hasn't been manually updated recently, safe to sync from YouCan
+            
             return orderService.updateOrder(
                     existingOrder.getId(),
                     customerName,
@@ -199,7 +187,6 @@ public class YouCanOrderSyncService {
                     extractProductId(youcanOrder)
             );
         } else {
-            // Create new order
             return orderService.createOrder(
                     store.getId(),
                     customerName,
@@ -207,22 +194,59 @@ public class YouCanOrderSyncService {
                     destinationAddress,
                     totalAmount,
                     currency,
-                    youcanOrderId, // external_order_id
-                    OrderSource.YOUCAN, // YouCan orders come from YouCan integration
+                    youcanOrderId,
+                    OrderSource.YOUCAN,
                     extractProductName(youcanOrder),
-                    extractProductId(youcanOrder)
+                    extractProductId(youcanOrder),
+                    city,
+                    metadataJson
             );
         }
     }
 
-    /**
-     * Extract orders list from YouCan API response
-     * Adjust this based on actual YouCan API response structure
-     */
+    
+    private String enrichCityFromFullOrder(YouCanStore youCanStore, String youcanOrderId,
+                                          Map<String, Object> customerData,
+                                          Map<String, Object> listOrderPayload) {
+        try {
+            Map<String, Object> full = youCanApiService.getOrder(youCanStore, youcanOrderId);
+            String c = extractCity(full, customerData);
+            if (c != null) {
+                return c;
+            }
+            c = extractCity(listOrderPayload, customerData);
+            if (c != null) {
+                return c;
+            }
+            String cid = extractCustomerId(full);
+            if (cid == null || cid.isBlank() || "null".equalsIgnoreCase(cid)) {
+                cid = extractCustomerId(listOrderPayload);
+            }
+            if (cid == null || cid.isBlank() || "null".equalsIgnoreCase(cid)) {
+                return null;
+            }
+            try {
+                Map<String, Object> fresh = youCanApiService.getCustomer(youCanStore, cid);
+                c = extractCity(full, fresh);
+                if (c != null) {
+                    return c;
+                }
+                return extractCity(listOrderPayload, fresh);
+            } catch (Exception e) {
+                System.err.println("YouCan enrichCity: getCustomer failed: " + e.getMessage());
+                return null;
+            }
+        } catch (Exception e) {
+            System.err.println("YouCan enrichCityFromFullOrder failed for order " + youcanOrderId + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> extractOrdersFromResponse(Map<String, Object> response) {
-        // YouCan API might return orders in different formats
-        // Common patterns: { "data": [...], "orders": [...], or direct array
+        
+        
         if (response.containsKey("data")) {
             Object data = response.get("data");
             if (data instanceof List) {
@@ -235,22 +259,20 @@ public class YouCanOrderSyncService {
                 return (List<Map<String, Object>>) orders;
             }
         }
-        // If response is directly a list
+        
         if (response instanceof List) {
             return (List<Map<String, Object>>) response;
         }
         return List.of();
     }
 
-    /**
-     * Extract customer ID from order
-     */
+    
     private String extractCustomerId(Map<String, Object> youcanOrder) {
-        // Try customer_id field
+        
         if (youcanOrder.containsKey("customer_id")) {
             return String.valueOf(youcanOrder.get("customer_id"));
         }
-        // Try customer object with id
+        
         if (youcanOrder.containsKey("customer")) {
             Object customer = youcanOrder.get("customer");
             if (customer instanceof Map) {
@@ -267,16 +289,16 @@ public class YouCanOrderSyncService {
     }
 
     private String extractCustomerName(Map<String, Object> youcanOrder, Map<String, Object> customerData) {
-        // First, try to use customer data from customer endpoint
+        
         if (customerData != null) {
-            // Try full_name first
+            
             if (customerData.containsKey("full_name")) {
                 String name = String.valueOf(customerData.get("full_name"));
                 if (name != null && !name.equals("null") && !name.trim().isEmpty()) {
                     return name;
                 }
             }
-            // Try first_name + last_name
+            
             if (customerData.containsKey("first_name") || customerData.containsKey("last_name")) {
                 String firstName = customerData.containsKey("first_name") ? 
                     String.valueOf(customerData.get("first_name")) : "";
@@ -289,9 +311,7 @@ public class YouCanOrderSyncService {
             }
         }
         
-        // Fallback to order data extraction
-        // YouCan API: customer info can be in customer object (if included) or in shipping/payment address arrays
-        // First, try customer object (if included with ?include=customer)
+        
         if (youcanOrder.containsKey("customer")) {
             Object customer = youcanOrder.get("customer");
             if (customer instanceof Map) {
@@ -316,7 +336,7 @@ public class YouCanOrderSyncService {
             }
         }
         
-        // Check shipping.address array (YouCan API structure)
+        
         if (youcanOrder.containsKey("shipping")) {
             Object shipping = youcanOrder.get("shipping");
             if (shipping instanceof Map) {
@@ -349,7 +369,7 @@ public class YouCanOrderSyncService {
             }
         }
         
-        // Check payment.address array
+        
         if (youcanOrder.containsKey("payment")) {
             Object payment = youcanOrder.get("payment");
             if (payment instanceof Map) {
@@ -376,7 +396,7 @@ public class YouCanOrderSyncService {
     }
 
     private String extractCustomerPhone(Map<String, Object> youcanOrder, Map<String, Object> customerData) {
-        // First, try to use customer data from customer endpoint
+        
         if (customerData != null) {
             if (customerData.containsKey("phone")) {
                 String phone = String.valueOf(customerData.get("phone"));
@@ -384,7 +404,7 @@ public class YouCanOrderSyncService {
                     return phone;
                 }
             }
-            // Try customer address array
+            
             if (customerData.containsKey("address") && customerData.get("address") instanceof List) {
                 @SuppressWarnings("unchecked")
                 List<Object> addressList = (List<Object>) customerData.get("address");
@@ -401,8 +421,7 @@ public class YouCanOrderSyncService {
             }
         }
         
-        // Fallback: YouCan API: phone is in shipping.address or payment.address arrays
-        // Check shipping.address array
+        
         if (youcanOrder.containsKey("shipping")) {
             Object shipping = youcanOrder.get("shipping");
             if (shipping instanceof Map) {
@@ -437,7 +456,7 @@ public class YouCanOrderSyncService {
             }
         }
         
-        // Check payment.address array
+        
         if (youcanOrder.containsKey("payment")) {
             Object payment = youcanOrder.get("payment");
             if (payment instanceof Map) {
@@ -460,7 +479,7 @@ public class YouCanOrderSyncService {
             }
         }
         
-        // Try customer object (if included)
+        
         if (youcanOrder.containsKey("customer")) {
             Object customer = youcanOrder.get("customer");
             if (customer instanceof Map) {
@@ -479,7 +498,7 @@ public class YouCanOrderSyncService {
     }
 
     private String extractDestinationAddress(Map<String, Object> youcanOrder, Map<String, Object> customerData) {
-        // First, try to use customer address data from customer endpoint
+        
         if (customerData != null && customerData.containsKey("address") && customerData.get("address") instanceof List) {
             @SuppressWarnings("unchecked")
             List<Object> addressList = (List<Object>) customerData.get("address");
@@ -488,7 +507,7 @@ public class YouCanOrderSyncService {
                 Map<String, Object> address = (Map<String, Object>) addressList.get(0);
                 StringBuilder addressStr = new StringBuilder();
                 
-                // YouCan customer address structure: first_line, second_line, city, country_name
+                
                 if (address.containsKey("first_line")) {
                     String firstLine = String.valueOf(address.get("first_line"));
                     if (firstLine != null && !firstLine.equals("null") && !firstLine.trim().isEmpty()) {
@@ -522,7 +541,7 @@ public class YouCanOrderSyncService {
             }
         }
         
-        // Fallback: YouCan API: address is in shipping.address array
+        
         if (youcanOrder.containsKey("shipping")) {
             Object shipping = youcanOrder.get("shipping");
             if (shipping instanceof Map) {
@@ -536,7 +555,7 @@ public class YouCanOrderSyncService {
                         Map<String, Object> address = (Map<String, Object>) addressList.get(0);
                         StringBuilder addressStr = new StringBuilder();
                         
-                        // Try various address field names
+                        
                         if (address.containsKey("address1") || address.containsKey("address")) {
                             String addr = address.containsKey("address1") ? 
                                 String.valueOf(address.get("address1")) : 
@@ -577,51 +596,99 @@ public class YouCanOrderSyncService {
         return "Address not provided";
     }
 
-    private String extractCity(Map<String, Object> youcanOrder, Map<String, Object> customerData) {
-        // First, try to use customer data from customer endpoint
-        if (customerData != null) {
-            // Try direct city field
-            if (customerData.containsKey("city")) {
-                String city = String.valueOf(customerData.get("city"));
-                if (city != null && !city.equals("null") && !city.trim().isEmpty()) {
-                    return city;
-                }
+    private static String textValue(Object o) {
+        if (o == null) {
+            return null;
+        }
+        String s = String.valueOf(o).trim();
+        if (s.isEmpty() || "null".equalsIgnoreCase(s)) {
+            return null;
+        }
+        return s;
+    }
+
+    
+    private static String cityFromAddressMap(Map<String, Object> address) {
+        if (address == null) {
+            return null;
+        }
+        for (String key : new String[]{"city", "city_name", "town", "locality", "village"}) {
+            String v = textValue(address.get(key));
+            if (v != null) {
+                return v;
             }
-            // Try customer address array
-            if (customerData.containsKey("address") && customerData.get("address") instanceof List) {
-                @SuppressWarnings("unchecked")
-                List<Object> addressList = (List<Object>) customerData.get("address");
-                if (!addressList.isEmpty() && addressList.get(0) instanceof Map) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> address = (Map<String, Object>) addressList.get(0);
-                    if (address.containsKey("city")) {
-                        String city = String.valueOf(address.get("city"));
-                        if (city != null && !city.equals("null") && !city.trim().isEmpty()) {
-                            return city;
-                        }
-                    }
+        }
+        String region = textValue(address.get("region"));
+        if (region != null) {
+            return region;
+        }
+        Object loc = address.get("location");
+        if (loc instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> locMap = (Map<String, Object>) loc;
+            for (String key : new String[]{"city", "name", "locality"}) {
+                String v = textValue(locMap.get(key));
+                if (v != null) {
+                    return v;
                 }
             }
         }
-        
-        // Fallback: YouCan API: city is in shipping.address array
-        if (youcanOrder.containsKey("shipping")) {
-            Object shipping = youcanOrder.get("shipping");
-            if (shipping instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> shippingMap = (Map<String, Object>) shipping;
-                if (shippingMap.containsKey("address") && shippingMap.get("address") instanceof List) {
-                    @SuppressWarnings("unchecked")
-                    List<Object> addressList = (List<Object>) shippingMap.get("address");
-                    if (!addressList.isEmpty() && addressList.get(0) instanceof Map) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> address = (Map<String, Object>) addressList.get(0);
-                        if (address.containsKey("city")) {
-                            String city = String.valueOf(address.get("city"));
-                            if (city != null && !city.equals("null") && !city.trim().isEmpty()) {
-                                return city;
-                            }
-                        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String cityFromAddressField(Object addressField) {
+        if (addressField == null) {
+            return null;
+        }
+        if (addressField instanceof Map) {
+            return cityFromAddressMap((Map<String, Object>) addressField);
+        }
+        if (addressField instanceof List<?> list && !list.isEmpty()) {
+            Object first = list.get(0);
+            if (first instanceof Map) {
+                return cityFromAddressMap((Map<String, Object>) first);
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String cityFromShippingOrPayment(Map<String, Object> youcanOrder, String shippingOrPaymentKey) {
+        Object container = youcanOrder.get(shippingOrPaymentKey);
+        if (!(container instanceof Map)) {
+            return null;
+        }
+        Map<String, Object> map = (Map<String, Object>) container;
+        String fromAddr = cityFromAddressField(map.get("address"));
+        if (fromAddr != null) {
+            return fromAddr;
+        }
+        return cityFromAddressField(map.get("shipping_address"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractCityFromEmbeddedCustomer(Map<String, Object> youcanOrder) {
+        Object c = youcanOrder.get("customer");
+        if (!(c instanceof Map)) {
+            return null;
+        }
+        Map<String, Object> customerMap = (Map<String, Object>) c;
+        String v = textValue(customerMap.get("city"));
+        if (v != null) {
+            return v;
+        }
+        v = cityFromAddressField(customerMap.get("address"));
+        if (v != null) {
+            return v;
+        }
+        Object addresses = customerMap.get("addresses");
+        if (addresses instanceof List<?> list) {
+            for (Object item : list) {
+                if (item instanceof Map) {
+                    v = cityFromAddressMap((Map<String, Object>) item);
+                    if (v != null) {
+                        return v;
                     }
                 }
             }
@@ -629,8 +696,50 @@ public class YouCanOrderSyncService {
         return null;
     }
 
+    private String extractCity(Map<String, Object> youcanOrder, Map<String, Object> customerData) {
+        if (customerData != null) {
+            String v = textValue(customerData.get("city"));
+            if (v != null) {
+                return v;
+            }
+            v = cityFromAddressField(customerData.get("address"));
+            if (v != null) {
+                return v;
+            }
+            Object addresses = customerData.get("addresses");
+            if (addresses instanceof List<?> list) {
+                for (Object item : list) {
+                    if (item instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> addr = (Map<String, Object>) item;
+                        v = cityFromAddressMap(addr);
+                        if (v != null) {
+                            return v;
+                        }
+                    }
+                }
+            }
+        }
+
+        String embedded = extractCityFromEmbeddedCustomer(youcanOrder);
+        if (embedded != null) {
+            return embedded;
+        }
+
+        String fromShip = cityFromShippingOrPayment(youcanOrder, "shipping");
+        if (fromShip != null) {
+            return fromShip;
+        }
+        fromShip = cityFromShippingOrPayment(youcanOrder, "payment");
+        if (fromShip != null) {
+            return fromShip;
+        }
+
+        return cityFromAddressField(youcanOrder.get("shipping_address"));
+    }
+
     private BigDecimal extractTotalAmount(Map<String, Object> youcanOrder) {
-        // YouCan might use "total_price", "total", "amount", etc.
+        
         Object total = youcanOrder.get("total_price");
         if (total == null) {
             total = youcanOrder.get("total");
@@ -645,7 +754,7 @@ public class YouCanOrderSyncService {
             try {
                 return new BigDecimal(total.toString());
             } catch (NumberFormatException e) {
-                // Ignore
+                
             }
         }
         return BigDecimal.ZERO;
@@ -656,30 +765,11 @@ public class YouCanOrderSyncService {
         if (currency != null) {
             return currency.toString();
         }
-        return "MAD"; // Default currency
-    }
-
-    private OrderStatus mapYouCanStatusToOrderStatus(Map<String, Object> youcanOrder) {
-        // Map YouCan order status to our OrderStatus enum
-        // Adjust based on actual YouCan status values
-        Object status = youcanOrder.get("status");
-        if (status == null) {
-            return OrderStatus.ENCOURS;
-        }
-        
-        String statusStr = status.toString().toUpperCase();
-        // Common YouCan statuses: pending, paid, fulfilled, cancelled, etc.
-        return switch (statusStr) {
-            case "PENDING", "UNPAID" -> OrderStatus.ENCOURS;
-            case "PAID", "CONFIRMED" -> OrderStatus.CONFIRMED;
-            case "FULFILLED", "SHIPPED" -> OrderStatus.CONCLED;
-            case "CANCELLED", "CANCELED" -> OrderStatus.CONCLED;
-            default -> OrderStatus.ENCOURS;
-        };
+        return "MAD"; 
     }
 
     private String extractProductName(Map<String, Object> youcanOrder) {
-        // YouCan API structure: variants[].variant.product.name
+        
         if (youcanOrder.containsKey("variants")) {
             Object variants = youcanOrder.get("variants");
             if (variants instanceof List && !((List<?>) variants).isEmpty()) {
@@ -692,7 +782,7 @@ public class YouCanOrderSyncService {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> variant = (Map<String, Object>) variantObj;
                         
-                        // YouCan structure: variant.variant.product.name
+                        
                         if (variant.containsKey("variant")) {
                             Object variantInner = variant.get("variant");
                             if (variantInner instanceof Map) {
@@ -705,7 +795,7 @@ public class YouCanOrderSyncService {
                                         @SuppressWarnings("unchecked")
                                         Map<String, Object> productMap = (Map<String, Object>) product;
                                         
-                                        // Product name is in product.name
+                                        
                                         if (productMap.containsKey("name")) {
                                             String itemName = String.valueOf(productMap.get("name"));
                                             if (itemName != null && !itemName.equals("null") && !itemName.trim().isEmpty()) {

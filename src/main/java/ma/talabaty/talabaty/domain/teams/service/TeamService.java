@@ -48,7 +48,7 @@ public class TeamService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Check if member already exists
+        
         Optional<StoreTeamMember> existing = teamMemberRepository.findByStoreIdAndUserId(storeId, userId);
         if (existing.isPresent()) {
             throw new RuntimeException("User is already a member of this store");
@@ -98,8 +98,7 @@ public class TeamService {
         StoreTeamMember member = teamMemberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Team member not found"));
 
-        // When a team member is removed from a store, unassign all orders in that store
-        // that were handled by them, so they no longer appear in the "Handled by" column.
+        
         if (member.getUser() != null && member.getStore() != null
                 && member.getUser().getId() != null && member.getStore().getId() != null) {
             java.util.UUID storeId = member.getStore().getId();
@@ -132,10 +131,7 @@ public class TeamService {
         return teamMemberRepository.save(member);
     }
 
-    /**
-     * Bulk create team members (managers and supports)
-     * Creates users and adds them to the store team
-     */
+    
     public BulkCreateTeamResponse bulkCreateTeamMembers(
             UUID storeId,
             BulkCreateTeamRequest request,
@@ -149,24 +145,24 @@ public class TeamService {
         List<StoreTeamMember> createdManagers = new ArrayList<>();
         List<StoreTeamMember> createdSupports = new ArrayList<>();
 
-        // Create managers
+        
         if (request.getManagers() != null) {
             for (TeamMemberRequest memberRequest : request.getManagers()) {
                 try {
-                    // Check if user already exists
+                    
                     Optional<User> existingUser = userRepository.findByEmail(memberRequest.getEmail());
                     User user;
                     
                     if (existingUser.isPresent()) {
                         user = existingUser.get();
-                        // Check if already a team member
+                        
                         Optional<StoreTeamMember> existingMember = teamMemberRepository.findByStoreIdAndUserId(storeId, user.getId());
                         if (existingMember.isPresent()) {
-                            continue; // Skip if already a member
+                            continue; 
                         }
                     } else {
-                        // Create new user with MANAGER role
-                        // Pass null password to auto-generate and mark mustChangePassword = true
+                        
+                        
                         String password = memberRequest.getPassword() != null && !memberRequest.getPassword().isEmpty()
                                 ? memberRequest.getPassword()
                                 : null;
@@ -176,17 +172,17 @@ public class TeamService {
                                 password,
                                 memberRequest.getFirstName(),
                                 memberRequest.getLastName(),
-                                null, // Phone number not provided in team member creation
+                                null, 
                                 accountId,
                                 UserRole.MANAGER
                         );
                         
-                        // Set status to ACTIVE for immediate use (confirmation support)
+                        
                         user.setStatus(UserStatus.ACTIVE);
                         userRepository.save(user);
                     }
                     
-                    // Add to team
+                    
                     StoreTeamMember member = new StoreTeamMember();
                     member.setStore(store);
                     member.setUser(user);
@@ -200,30 +196,30 @@ public class TeamService {
                     createdManagers.add(teamMemberRepository.save(member));
                     
                 } catch (Exception e) {
-                    // Log error but continue with other members
+                    
                     System.err.println("Error creating manager " + memberRequest.getEmail() + ": " + e.getMessage());
                 }
             }
         }
 
-        // Create supports (confirmation supports)
+        
         if (request.getSupports() != null) {
             for (TeamMemberRequest memberRequest : request.getSupports()) {
                 try {
-                    // Check if user already exists
+                    
                     Optional<User> existingUser = userRepository.findByEmail(memberRequest.getEmail());
                     User user;
                     
                     if (existingUser.isPresent()) {
                         user = existingUser.get();
-                        // Check if already a team member
+                        
                         Optional<StoreTeamMember> existingMember = teamMemberRepository.findByStoreIdAndUserId(storeId, user.getId());
                         if (existingMember.isPresent()) {
-                            continue; // Skip if already a member
+                            continue; 
                         }
                     } else {
-                        // Create new user with SUPPORT role
-                        // Pass null password to auto-generate and mark mustChangePassword = true
+                        
+                        
                         String password = memberRequest.getPassword() != null && !memberRequest.getPassword().isEmpty()
                                 ? memberRequest.getPassword()
                                 : null;
@@ -233,17 +229,17 @@ public class TeamService {
                                 password,
                                 memberRequest.getFirstName(),
                                 memberRequest.getLastName(),
-                                null, // Phone number not provided in team member creation
+                                null, 
                                 accountId,
                                 UserRole.SUPPORT
                         );
                         
-                        // Set status to ACTIVE for immediate use (confirmation support)
+                        
                         user.setStatus(UserStatus.ACTIVE);
                         userRepository.save(user);
                     }
                     
-                    // Add to team
+                    
                     StoreTeamMember member = new StoreTeamMember();
                     member.setStore(store);
                     member.setUser(user);
@@ -257,7 +253,7 @@ public class TeamService {
                     createdSupports.add(teamMemberRepository.save(member));
                     
                 } catch (Exception e) {
-                    // Log error but continue with other members
+                    
                     System.err.println("Error creating support " + memberRequest.getEmail() + ": " + e.getMessage());
                 }
             }
@@ -270,11 +266,7 @@ public class TeamService {
         return response;
     }
 
-    /**
-     * Create or add a team member to a store
-     * If user exists, just add them to the store (if not already a member)
-     * If user doesn't exist, create them and add to the store
-     */
+    
     public CreateTeamMemberResponse createOrAddTeamMember(
             UUID storeId,
             String email,
@@ -288,22 +280,20 @@ public class TeamService {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        // Check if user already exists
+        
         Optional<User> existingUser = userRepository.findByEmail(email);
         User user;
         boolean userWasCreated = false;
         String generatedPassword = null;
 
         if (existingUser.isPresent()) {
-            // User exists - check if already a member of this store
+            
             user = existingUser.get();
 
             Optional<StoreTeamMember> existingMember = teamMemberRepository.findByStoreIdAndUserId(storeId, user.getId());
             if (existingMember.isPresent()) {
-                // Idempotent behavior: if the user is already a member of this store,
-                // just return that membership instead of failing. This avoids confusing
-                // errors in the UI such as "already a member" while the user may not
-                // remember adding them.
+                
+                
                 CreateTeamMemberResponse response = new CreateTeamMemberResponse();
                 response.setMember(existingMember.get());
                 response.setUserWasCreated(false);
@@ -311,10 +301,10 @@ public class TeamService {
                 return response;
             }
         } else {
-            // User doesn't exist - create new user
+            
             userWasCreated = true;
             
-            // Generate password if not provided
+            
             String finalPassword = password;
             boolean mustChangePassword = false;
             if (password == null || password.isEmpty()) {
@@ -328,7 +318,7 @@ public class TeamService {
                     finalPassword,
                     firstName,
                     lastName,
-                    null, // Phone number not provided in team member creation
+                    null, 
                     accountId,
                     userRole
             );
@@ -339,7 +329,7 @@ public class TeamService {
             }
         }
 
-        // Add user to team
+        
         StoreTeamMember member = new StoreTeamMember();
         member.setStore(store);
         member.setUser(user);
@@ -362,7 +352,7 @@ public class TeamService {
     }
 
     private String generateTemporaryPassword() {
-        // Generate a random temporary password: 12 chars with uppercase, lowercase, numbers, and special chars
+        
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
         StringBuilder password = new StringBuilder();
         java.util.Random random = new java.util.Random();
@@ -372,7 +362,7 @@ public class TeamService {
         return password.toString();
     }
 
-    // Inner classes for request/response
+    
     public static class BulkCreateTeamRequest {
         private List<TeamMemberRequest> managers;
         private List<TeamMemberRequest> supports;

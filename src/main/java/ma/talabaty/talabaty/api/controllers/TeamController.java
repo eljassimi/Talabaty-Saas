@@ -47,7 +47,7 @@ public class TeamController {
             JwtUser jwtUser = (JwtUser) authentication.getPrincipal();
             return UUID.fromString(jwtUser.getUserId());
         }
-        // Fallback for backward compatibility
+        
         return UUID.fromString(authentication.getName());
     }
 
@@ -64,7 +64,7 @@ public class TeamController {
         Store store = storeService.findByAccountIdAndId(accountId, UUID.fromString(storeId))
                 .orElseThrow(() -> new RuntimeException("Store not found"));
         
-        // Check permission
+        
         if (!permissionChecker.canManageTeamMembers(user.getRole(), userId, store)) {
             throw new AccessDeniedException("You don't have permission to manage team members");
         }
@@ -92,7 +92,7 @@ public class TeamController {
         Store store = storeService.findByAccountIdAndId(accountId, UUID.fromString(storeId))
                 .orElseThrow(() -> new RuntimeException("Store not found"));
         
-        // Check permission
+        
         if (!permissionChecker.canManageTeamMembers(user.getRole(), userId, store)) {
             throw new AccessDeniedException("You don't have permission to manage team members");
         }
@@ -107,11 +107,7 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(teamMapper.toDto(member));
     }
 
-    /**
-     * Create or add a team member to a store
-     * If user exists, just add them to the store (if not already a member)
-     * If user doesn't exist, create them and add to the store
-     */
+    
     @PostMapping("/create-member")
     public ResponseEntity<CreateTeamMemberResponseDto> createTeamMember(
             @PathVariable String storeId,
@@ -122,16 +118,16 @@ public class TeamController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         UUID accountId = AuthenticationHelper.getAccountIdFromAuth(authentication);
-        // Find store by ID (not restricted to account - allows cross-account team management)
+        
         Store store = storeService.findById(UUID.fromString(storeId))
                 .orElseThrow(() -> new RuntimeException("Store not found"));
         
-        // Check permission to manage team members (includes manager check)
+        
         if (!permissionChecker.canManageTeamMembers(currentUser.getRole(), userId, store)) {
             throw new AccessDeniedException("You don't have permission to manage team members");
         }
 
-        // Validate role
+        
         if (request.getRole() != UserRole.MANAGER && request.getRole() != UserRole.SUPPORT) {
             throw new RuntimeException("Only MANAGER and SUPPORT roles can be assigned to team members");
         }
@@ -185,7 +181,7 @@ public class TeamController {
         Store store = storeService.findByAccountIdAndId(accountId, UUID.fromString(storeId))
                 .orElseThrow(() -> new RuntimeException("Store not found"));
         
-        // Check permission
+        
         if (!permissionChecker.canManageTeamMembers(user.getRole(), userId, store)) {
             throw new AccessDeniedException("You don't have permission to manage team members");
         }
@@ -207,7 +203,7 @@ public class TeamController {
         Store store = storeService.findByAccountIdAndId(accountId, UUID.fromString(storeId))
                 .orElseThrow(() -> new RuntimeException("Store not found"));
         
-        // Check permission
+        
         if (!permissionChecker.canManageTeamMembers(user.getRole(), userId, store)) {
             throw new AccessDeniedException("You don't have permission to manage team members");
         }
@@ -216,10 +212,7 @@ public class TeamController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Create team members in bulk (managers and supports)
-     * Only ACCOUNT_OWNER can create team members
-     */
+    
     @PostMapping("/bulk-create")
     public ResponseEntity<TeamService.BulkCreateTeamResponse> bulkCreateTeamMembers(
             @PathVariable String storeId,

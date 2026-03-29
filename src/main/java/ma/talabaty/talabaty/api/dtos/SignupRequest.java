@@ -23,9 +23,6 @@ public class SignupRequest {
     @NotBlank(message = "Phone number is required")
     private String phoneNumber;
 
-    @NotBlank(message = "Account name is required")
-    private String accountName;
-
     private AccountType accountType = AccountType.INDIVIDUAL;
 
     public String getEmail() {
@@ -66,14 +63,6 @@ public class SignupRequest {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
     }
 
     public AccountType getAccountType() {

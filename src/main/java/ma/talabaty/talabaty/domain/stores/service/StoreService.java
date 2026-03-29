@@ -39,7 +39,7 @@ public class StoreService {
             throw new RuntimeException("Store with name " + name + " already exists for this account");
         }
 
-        // Generate unique store code
+        
         String code = generateUniqueStoreCode(accountId);
 
         Store store = new Store();
@@ -48,7 +48,7 @@ public class StoreService {
         store.setCode(code);
         store.setStatus(StoreStatus.ACTIVE);
 
-        // Set manager only if provided
+        
         if (managerId != null) {
             User manager = userRepository.findById(managerId)
                     .orElseThrow(() -> new RuntimeException("Manager not found"));
@@ -59,13 +59,13 @@ public class StoreService {
     }
 
     private String generateUniqueStoreCode(UUID accountId) {
-        // Generate a unique code based on account ID and timestamp
-        // Format: ST-{first8charsOfAccountId}-{timestamp}
+        
+        
         String accountPrefix = accountId.toString().substring(0, 8).toUpperCase();
-        String timestamp = String.valueOf(System.currentTimeMillis()).substring(7); // Last 6 digits
+        String timestamp = String.valueOf(System.currentTimeMillis()).substring(7); 
         String code = "ST-" + accountPrefix + "-" + timestamp;
         
-        // Ensure uniqueness by checking if code exists
+        
         int attempts = 0;
         while (storeRepository.existsByCode(code) && attempts < 10) {
             code = "ST-" + accountPrefix + "-" + timestamp + "-" + attempts;
@@ -73,7 +73,7 @@ public class StoreService {
         }
         
         if (storeRepository.existsByCode(code)) {
-            // Fallback: use UUID short format
+            
             code = "ST-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         }
         
@@ -84,28 +84,21 @@ public class StoreService {
         return storeRepository.findByAccountId(accountId);
     }
 
-    /**
-     * Get stores accessible by a user based on their role and team memberships:
-     * - ACCOUNT_OWNER or PLATFORM_ADMIN: all stores in the account + stores where they are team members
-     * - MANAGER: stores where the user is the manager + stores where they are team members
-     * - SUPPORT: stores where the user is a team member
-     * 
-     * This allows users to work with stores across different accounts if they are team members.
-     */
+    
     public List<Store> findStoresForUser(UUID accountId, UUID userId, UserRole userRole) {
         java.util.Set<Store> stores = new java.util.HashSet<>();
         
-        // Get stores from account (for ACCOUNT_OWNER and PLATFORM_ADMIN)
+        
         if (userRole == UserRole.ACCOUNT_OWNER || userRole == UserRole.PLATFORM_ADMIN) {
             stores.addAll(storeRepository.findByAccountId(accountId));
         }
         
-        // Get stores where user is manager
+        
         if (userRole == UserRole.MANAGER || userRole == UserRole.ACCOUNT_OWNER || userRole == UserRole.PLATFORM_ADMIN) {
             stores.addAll(storeRepository.findByManagerId(userId));
         }
         
-        // Get stores where user is a team member (across all accounts)
+        
         stores.addAll(storeRepository.findByTeamMemberUserId(userId));
         
         return new java.util.ArrayList<>(stores);
@@ -142,9 +135,7 @@ public class StoreService {
         return storeRepository.save(store);
     }
 
-    /**
-     * Returns store settings, creating default settings if none exist.
-     */
+    
     public StoreSettings getOrCreateSettings(Store store) {
         StoreSettings settings = store.getSettings();
         if (settings == null) {

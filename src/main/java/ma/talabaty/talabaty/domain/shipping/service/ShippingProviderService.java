@@ -53,7 +53,7 @@ public class ShippingProviderService {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
         
-        // Verify store belongs to account
+        
         if (!store.getAccount().getId().equals(accountId)) {
             throw new RuntimeException("Store does not belong to the account");
         }
@@ -80,20 +80,15 @@ public class ShippingProviderService {
 
     public Optional<ShippingProvider> getActiveProvider(UUID accountId, ProviderType providerType) {
         List<ShippingProvider> providers = providerRepository.findByAccountIdAndProviderType(accountId, providerType);
-        // Return the most recently created one if multiple exist
+        
         return providers.isEmpty() ? Optional.empty() : Optional.of(providers.get(0));
     }
 
-    /**
-     * Get active provider for a store.
-     * This is strictly per-store: if a store does not have its own provider,
-     * no provider is returned. We do NOT fall back to account-level credentials,
-     * so each store must configure its own unique delivery provider.
-     */
+    
     public Optional<ShippingProvider> getActiveProviderForStore(UUID storeId, ProviderType providerType) {
         List<ShippingProvider> storeProviders = providerRepository.findByStoreIdAndProviderType(storeId, providerType);
         if (!storeProviders.isEmpty()) {
-            // Return the most recently created one if multiple exist
+            
             return Optional.of(storeProviders.get(0));
         }
         return Optional.empty();

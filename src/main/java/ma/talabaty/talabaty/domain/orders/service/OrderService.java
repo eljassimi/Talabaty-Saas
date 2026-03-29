@@ -58,17 +58,18 @@ public class OrderService {
         this.supportRevenueEntryRepository = supportRevenueEntryRepository;
     }
 
-    public Order createOrder(UUID storeId, String customerName, String customerPhone, 
+    public Order createOrder(UUID storeId, String customerName, String customerPhone,
                             String destinationAddress, BigDecimal totalAmount, String currency,
-                            String externalOrderId, OrderSource source, String productName, String productId) {
+                            String externalOrderId, OrderSource source, String productName, String productId,
+                            String city, String metadata) {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found"));
 
-        // Check for duplicate order by external_order_id if provided
+        
         if (externalOrderId != null && !externalOrderId.trim().isEmpty()) {
             Optional<Order> existingOrder = orderRepository.findByStoreIdAndExternalOrderId(storeId, externalOrderId);
             if (existingOrder.isPresent()) {
-                // Order already exists, return it instead of creating a duplicate
+                
                 return existingOrder.get();
             }
         }
@@ -78,26 +79,8 @@ public class OrderService {
         order.setCustomerName(customerName);
         order.setCustomerPhone(customerPhone);
         order.setDestinationAddress(destinationAddress);
-        
-        // DEBUG: Log the totalAmount being set
-        System.out.println("========================================");
-        System.out.println("DEBUG OrderService.createOrder:");
-        System.out.println("  totalAmount parameter = " + totalAmount);
-        System.out.println("  totalAmount != null? " + (totalAmount != null));
-        if (totalAmount != null) {
-            System.out.println("  totalAmount.compareTo(BigDecimal.ZERO) = " + totalAmount.compareTo(BigDecimal.ZERO));
-            System.out.println("  totalAmount.doubleValue() = " + totalAmount.doubleValue());
-            System.out.println("  totalAmount.toString() = " + totalAmount.toString());
-        } else {
-            System.out.println("  WARNING: totalAmount is NULL!");
-        }
-        System.out.println("========================================");
-        
-        // Set totalAmount - if null, use ZERO, but log a warning
+
         BigDecimal finalTotalAmount = totalAmount != null ? totalAmount : BigDecimal.ZERO;
-        if (totalAmount == null) {
-            System.out.println("WARNING: totalAmount is null, using BigDecimal.ZERO");
-        }
         order.setTotalAmount(finalTotalAmount);
         order.setCurrency(currency != null ? currency : "USD");
         order.setExternalOrderId(externalOrderId);
@@ -105,41 +88,30 @@ public class OrderService {
         order.setProductName(productName);
         order.setProductId(productId);
         order.setStatus(OrderStatus.ENCOURS);
+        if (city != null && !city.isBlank()) {
+            order.setCity(city.trim());
+        }
+        if (metadata != null && !metadata.isBlank()) {
+            order.setMetadata(metadata);
+        }
 
         Order savedOrder = orderRepository.save(order);
-        
-        // DEBUG: Log the saved order
-        System.out.println("========================================");
-        System.out.println("DEBUG OrderService.createOrder: After saving to database:");
-        System.out.println("  Saved order ID = " + savedOrder.getId());
-        System.out.println("  Saved order totalAmount = " + savedOrder.getTotalAmount());
-        System.out.println("  Saved order totalAmount (string) = " + (savedOrder.getTotalAmount() != null ? savedOrder.getTotalAmount().toString() : "null"));
-        System.out.println("  Saved order totalAmount (double) = " + (savedOrder.getTotalAmount() != null ? savedOrder.getTotalAmount().doubleValue() : "null"));
-        System.out.println("  Saved order totalAmount.compareTo(BigDecimal.ZERO) = " + (savedOrder.getTotalAmount() != null ? savedOrder.getTotalAmount().compareTo(BigDecimal.ZERO) : "null"));
-        System.out.println("========================================");
-        
+
         addStatusHistory(savedOrder, OrderStatus.ENCOURS, null, null);
         return savedOrder;
     }
 
-    /**
-     * List orders for a store. Automatically distributes unassigned orders among support team members
-     * (round-robin by creation date) so each support user gets a fair share.
-     */
+    
     public List<Order> findByStoreId(UUID storeId) {
         distributeUnassignedOrdersToSupport(storeId);
         return orderRepository.findByStoreId(storeId);
     }
 
-    /**
-     * Assign unassigned orders to support team members in round-robin order (by createdAt)
-     * so the workload is divided evenly (e.g. 10 orders, 2 support users → 5 each).
-     * Uses distinct users only (by user id) so each person gets a fair share.
-     */
+    
     public void distributeUnassignedOrdersToSupport(UUID storeId) {
         List<StoreTeamMember> supportMembers = storeTeamMemberRepository.findSupportMembersWithUserByStoreId(
                 storeId, Arrays.asList(StoreTeamRole.SUPPORT, StoreTeamRole.EXTERNAL_SUPPORT));
-        // Deduplicate by user id so we round-robin across people, not member rows
+        
         Set<UUID> seenUserIds = new LinkedHashSet<>();
         List<User> users = new ArrayList<>();
         for (StoreTeamMember m : supportMembers) {
@@ -171,20 +143,20 @@ public class OrderService {
         if (order.getStatus() != newStatus) {
             order.setStatus(newStatus);
             
-            // If a support user changes the status, assign the order to them
+            
             User changedBy = null;
             if (changedByUserId != null) {
                 changedBy = userRepository.findById(changedByUserId).orElse(null);
                 if (changedBy != null && changedBy.getRole().name().equals("SUPPORT")) {
-                    // Assign order to the support user who changed the status
+                    
                     order.setAssignedTo(changedBy);
                 }
             }
             
-            orderRepository.saveAndFlush(order); // Use saveAndFlush to ensure immediate database write
+            orderRepository.saveAndFlush(order); 
             addStatusHistory(order, newStatus, note, changedBy);
 
-            // WhatsApp automation: send message when order is confirmed or delivered
+            
             if (newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.CONCLED) {
                 try {
                     Store store = order.getStore();
@@ -206,8 +178,7 @@ public class OrderService {
                 }
             }
 
-            // Support revenue: credit the handler when order is confirmed (admin-defined price per order).
-            // For testing, only CONFIRMED is credited; add CONCLED back when needed for "delivered" pay.
+            
             if (newStatus == OrderStatus.CONFIRMED && order.getAssignedTo() != null) {
                 try {
                     Store store = order.getStore();
@@ -284,7 +255,7 @@ public class OrderService {
             order.setProductId(productId);
         }
 
-        // Use saveAndFlush to ensure immediate database write
+        
         return orderRepository.saveAndFlush(order);
     }
 }

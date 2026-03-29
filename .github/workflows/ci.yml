@@ -78,32 +78,3 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # Example: push images to GitHub Container Registry on main/master pushes
-  # push-image:
-  #   runs-on: ubuntu-latest
-  #   needs: docker
-  #   if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Log in to GHCR
-  #       uses: docker/login-action@v3
-  #       with:
-  #         registry: ghcr.io
-  #         username: ${{ github.actor }}
-  #         password: ${{ secrets.GITHUB_TOKEN }}
-  #     - name: Build and push backend image
-  #       uses: docker/build-push-action@v6
-  #       with:
-  #         context: .
-  #         push: true
-  #         tags: ghcr.io/${{ github.repository_owner }}/talabaty-backend:latest
-  #         cache-from: type=gha
-  #         cache-to: type=gha,mode=max
-  #     - name: Build and push WhatsApp bridge image
-  #       uses: docker/build-push-action@v6
-  #       with:
-  #         context: ./whatsapp-bridge
-  #         push: true
-  #         tags: ghcr.io/${{ github.repository_owner }}/talabaty-whatsapp-bridge:latest
-  #         cache-from: type=gha
-  #         cache-to: type=gha,mode=max

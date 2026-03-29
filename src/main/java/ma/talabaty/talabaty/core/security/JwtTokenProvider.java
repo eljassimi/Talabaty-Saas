@@ -17,14 +17,14 @@ import java.util.Map;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret:your-secret-key-change-in-production-min-256-bits}")
+    @Value("${jwt.secret:KJHSD789sd7f98sdf7sdf8s7df98sdf7sdf98sdf7sdf98sdf}")
     private String jwtSecret;
 
     @Value("${jwt.access-token-expiration:3600}")
-    private Long accessTokenExpiration; // seconds
+    private Long accessTokenExpiration; 
 
     @Value("${jwt.refresh-token-expiration:86400}")
-    private Long refreshTokenExpiration; // seconds
+    private Long refreshTokenExpiration; 
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
@@ -76,17 +76,17 @@ public class JwtTokenProvider {
 
     public String getAccountIdFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
-        // Try to get accountId as String first (most reliable)
+        
         try {
             String accountId = claims.get("accountId", String.class);
             if (accountId != null && !accountId.trim().isEmpty()) {
                 return accountId;
             }
         } catch (Exception e) {
-            // Fall through to try as Object
+            
         }
         
-        // Fallback: try as Object
+        
         Object accountIdObj = claims.get("accountId");
         if (accountIdObj != null) {
             return accountIdObj.toString();
@@ -98,7 +98,7 @@ public class JwtTokenProvider {
     public boolean validateToken(String token) {
         try {
             Claims claims = getClaimsFromToken(token);
-            // Also check if token is expired
+            
             if (claims.getExpiration() != null && claims.getExpiration().before(new Date())) {
                 return false;
             }
@@ -118,7 +118,7 @@ public class JwtTokenProvider {
             if (claims.getExpiration() != null && claims.getExpiration().before(new Date())) {
                 return "Token is expired";
             }
-            return null; // Token is valid
+            return null; 
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             return "Token is expired: " + e.getMessage();
         } catch (io.jsonwebtoken.security.SignatureException e) {

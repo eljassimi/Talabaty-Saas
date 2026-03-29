@@ -21,11 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Sends WhatsApp messages via Twilio (paid) or a local bridge (free, e.g. whatsapp-web.js).
- * - Twilio: set twilio.account-sid, twilio.auth-token, twilio.whatsapp.from
- * - Free/local: set whatsapp.local.url to your bridge (e.g. http://localhost:3100)
- */
+
 @Service
 public class WhatsAppService {
 
@@ -48,7 +44,7 @@ public class WhatsAppService {
     private volatile Map<String, Object> lastBridgeStatus = null;
     private volatile long lastBridgeStatusAtMs = 0L;
 
-    /** True if either Twilio or the local WhatsApp bridge is configured. */
+    
     public boolean isConfigured() {
         return isTwilioConfigured() || isLocalBridgeConfigured();
     }
@@ -63,41 +59,29 @@ public class WhatsAppService {
         return localBridgeUrl != null && !localBridgeUrl.trim().isBlank();
     }
 
-    /**
-     * Normalize phone to E.164-like (e.g. +212612345678).
-     * Handles Moroccan numbers: 0612345678, 612345678 → +212612345678; 212612345678 kept as is.
-     */
+    
     public String normalizePhone(String toPhone) {
         if (toPhone == null || toPhone.isBlank()) return "";
         String digits = toPhone.trim().replaceAll("\\D", "");
         if (digits.isEmpty()) return "";
         while (digits.startsWith("0")) digits = digits.substring(1);
         if (digits.length() == 9 && (digits.startsWith("6") || digits.startsWith("7"))) {
-            digits = "212" + digits; // Morocco mobile
+            digits = "212" + digits; 
         }
         return "+" + digits;
     }
 
-    /**
-     * Send a WhatsApp message. Uses local bridge if configured, otherwise Twilio.
-     * @return true if sent successfully, false otherwise
-     */
+    
     public boolean send(UUID storeId, String toPhone, String message) {
         return sendWithReason(storeId, toPhone, message) == null;
     }
 
-    /**
-     * Backwards-compatible helper for callers that don't have a store id (global send).
-     */
+    
     public boolean send(String toPhone, String message) {
         return send(null, toPhone, message);
     }
 
-    /**
-     * Send a WhatsApp message and return the error message if it failed (null if success).
-     * A store id is used to select the correct WhatsApp session on the local bridge
-     * so each store can be linked to a different WhatsApp account.
-     */
+    
     public String sendWithReason(UUID storeId, String toPhone, String message) {
         if (toPhone == null || toPhone.isBlank() || message == null || message.isBlank()) {
             return "Missing phone or message";
@@ -168,14 +152,7 @@ public class WhatsAppService {
         }
     }
 
-    /**
-     * Get link status from the local bridge (for showing QR on the website).
-     * Returns map with "ready", "qr", "initializing", "error". Empty map if bridge not configured.
-     * On connection failure, returns map with "error" so the UI can show a clear message.
-     *
-     * The store id is forwarded to the bridge as a session id so each store
-     * can have its own WhatsApp session (different phone/account).
-     */
+    
     @SuppressWarnings("unchecked")
     public Map<String, Object> getBridgeLinkStatus(UUID storeId) {
         Map<String, Object> result = new HashMap<>();
@@ -202,14 +179,14 @@ public class WhatsAppService {
                 if (body.containsKey("reason") && body.get("reason") != null) {
                     result.put("reason", body.get("reason").toString());
                 }
-                // Cache last known bridge status so short restarts don't surface as hard connection errors.
+                
                 lastBridgeStatus = new HashMap<>(result);
                 lastBridgeStatusAtMs = System.currentTimeMillis();
             }
         } catch (Exception e) {
             System.err.println("[WhatsApp bridge] Get QR failed: " + e.getMessage());
             long now = System.currentTimeMillis();
-            boolean recent = lastBridgeStatus != null && (now - lastBridgeStatusAtMs) < 120_000; // 2 minutes
+            boolean recent = lastBridgeStatus != null && (now - lastBridgeStatusAtMs) < 120_000; 
             if (recent) {
                 result.putAll(lastBridgeStatus);
                 result.put("ready", false);
@@ -222,17 +199,12 @@ public class WhatsAppService {
         return result;
     }
 
-    /**
-     * Backwards-compatible helper for callers that don't have a store id.
-     */
+    
     public Map<String, Object> getBridgeLinkStatus() {
         return getBridgeLinkStatus(null);
     }
 
-    /**
-     * Replace placeholders in a template with order data.
-     * Supported: {{customerName}}, {{orderId}}, {{trackingNumber}}, {{totalAmount}}, {{currency}}, {{city}}
-     */
+    
     public String fillTemplate(String template, Order order) {
         if (template == null || template.isBlank()) return "";
         String s = template;

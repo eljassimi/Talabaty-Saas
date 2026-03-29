@@ -6,4 +6,3 @@ public enum WebhookEventType {
     ORDER_STATUS_CHANGED
 }
 
-

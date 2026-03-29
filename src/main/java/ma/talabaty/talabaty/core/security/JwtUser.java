@@ -27,7 +27,7 @@ public class JwtUser implements Serializable {
 
     @Override
     public String toString() {
-        return accountId; // Return accountId as string representation for backward compatibility
+        return accountId; 
     }
 }
 

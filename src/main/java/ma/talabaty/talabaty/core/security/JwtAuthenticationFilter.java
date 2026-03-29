@@ -25,7 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        // Skip authentication for OPTIONS requests (CORS preflight)
+        
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
@@ -36,13 +36,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             
-            // Skip if token is empty
+            
             if (token == null || token.trim().isEmpty()) {
                 filterChain.doFilter(request, response);
                 return;
             }
             
-            // Validate token first
+            
             if (!tokenProvider.validateToken(token)) {
                 String validationError = tokenProvider.getTokenValidationError(token);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -59,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String email = tokenProvider.getEmailFromToken(token);
                 String accountId = tokenProvider.getAccountIdFromToken(token);
 
-                // Validate that accountId is not null or empty
+                
                 if (accountId == null || accountId.trim().isEmpty()) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
@@ -67,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
                 
-                // Validate that userId and email are also present
+                
                 if (userId == null || userId.trim().isEmpty()) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
@@ -75,16 +75,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                // Create JwtUser with all user information
+                
                 JwtUser jwtUser = new JwtUser(userId, accountId, email);
                 
-                // Use JwtUser as principal - toString() returns accountId for backward compatibility
+                
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(jwtUser, null, new ArrayList<>());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {
-                // If there's an error extracting token data, return error
+                
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("application/json");
                 String errorMsg = e.getMessage() != null ? e.getMessage().replace("\"", "\\\"") : "Unknown error";
