@@ -20,9 +20,6 @@ class ApiCredentialServiceTest {
     @Mock
     private ApiCredentialRepository credentialRepository;
 
-    @Mock
-    private AccountRepository accountRepository;
-
     @InjectMocks
     private ApiCredentialService apiCredentialService;
 
